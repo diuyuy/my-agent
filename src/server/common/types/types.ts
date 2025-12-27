@@ -1,7 +1,8 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { Session, User } from "better-auth";
 
 export type Env = {
   Variables: {
-    db: ReturnType<typeof drizzle>;
+    user: User;
+    session: Session;
   };
 };

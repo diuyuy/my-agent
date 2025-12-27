@@ -5,6 +5,13 @@ export const RESPONSE_STATUS = {
     message: "요청이 성공적으로 처리되었습니다.",
   },
 
+  // 401
+  INVALID_SESSION: {
+    status: 401,
+    code: "INVALID_SESSION",
+    message: "유효하지 않은 세션입니다.",
+  },
+
   // 404
   NOT_FOUND: {
     status: 404,

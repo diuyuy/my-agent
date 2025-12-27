@@ -19,6 +19,8 @@ export const globalExceptionHandler = (
     );
   }
 
+  console.error(error);
+
   return c.json(
     {
       success: false,

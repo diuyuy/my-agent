@@ -1,0 +1,24 @@
+import { PaginationInfo, ResponseStatus } from "@/types/types";
+
+export const createSuccessResponse = <T>(
+  { message }: ResponseStatus,
+  data: T
+) => {
+  return {
+    success: true,
+    message,
+    data,
+  };
+};
+
+export const createPaginationResponse = <T>(
+  items: T[],
+  { nextCursor, totalElements, hasNext }: PaginationInfo
+) => {
+  return {
+    items,
+    nextCursor,
+    totalElements,
+    hasNext,
+  };
+};

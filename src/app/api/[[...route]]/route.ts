@@ -1,9 +1,9 @@
 import { RESPONSE_STATUS } from "@/constants/response-status";
 import { auth } from "@/lib/auth";
 import { CommonHttpException } from "@/server/common/errors/common-http-exception";
+import { globalExceptionHandler } from "@/server/common/errors/global-exception-handler";
 import { Env } from "@/server/common/types/types";
-import { globalExceptionHandler } from "@/server/common/utils/global-exception-handler";
-import conversationRoute from "@/server/feature/conversation.route";
+import conversationRoute from "@/server/features/conversations/conversation.route";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import { handle } from "hono/vercel";

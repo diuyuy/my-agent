@@ -1,10 +1,12 @@
 import {
+  index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
@@ -20,29 +22,54 @@ export const messageRoleEnum = pgEnum("message_role", [
 export const fileTypeEnum = pgEnum("file_type", ["image", "audio", "pdf"]);
 
 // Tables
-export const conversations = pgTable("conversations", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at")
-    .notNull()
-    .$onUpdate(() => new Date()),
-});
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("idx_conversation_title").on(table.title),
+    index("idx_conversation_updated_at").on(table.updatedAt),
+  ]
+);
 
-export const messages = pgTable("messages", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  conversationId: uuid("conversation_id")
-    .notNull()
-    .references(() => conversations.id, { onDelete: "cascade" }),
-  role: messageRoleEnum("role").notNull(),
-  content: text("content"),
-  modelProvider: text("model_provider"),
-  tokenUsed: integer("token_used"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const favoriteConversations = pgTable(
+  "favorite_conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id").references(() => conversations.id, {
+      onDelete: "cascade",
+    }),
+  },
+  (table) => [
+    unique("unique_user_conversation").on(table.userId, table.conversationId),
+  ]
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    role: messageRoleEnum("role").notNull(),
+    content: text("content"),
+    modelProvider: text("model_provider"),
+    tokenUsed: integer("token_used"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_messages_created_at").on(table.createdAt)]
+);
 
 export const messageAttachments = pgTable("message_attachments", {
   id: uuid("id").primaryKey().defaultRandom(),
