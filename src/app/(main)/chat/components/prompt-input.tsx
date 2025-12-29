@@ -1,37 +1,37 @@
-'use client'
+"use client";
 
-import { useEffect, useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Plus, ChevronDown, Send } from 'lucide-react'
+import { Button } from "@/components/ui/button";
+import { ChevronDown, Plus, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface PromptInputProps {
-  className?: string
-  placeholder?: string
-  disabled?: boolean
-  maxHeight?: number
+  className?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  maxHeight?: number;
 }
 
 export function PromptInput({
-  className = '',
-  placeholder = '메시지를 입력하세요...',
+  className = "",
+  placeholder = "메시지를 입력하세요...",
   disabled = false,
   maxHeight = 200,
 }: PromptInputProps) {
-  const [value, setValue] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [value, setValue] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-sizing textarea logic
   useEffect(() => {
-    const textarea = textareaRef.current
-    if (!textarea) return
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
     // Reset height to auto to get the correct scrollHeight
-    textarea.style.height = 'auto'
+    textarea.style.height = "auto";
 
     // Calculate new height
-    const newHeight = Math.min(textarea.scrollHeight, maxHeight)
-    textarea.style.height = `${newHeight}px`
-  }, [value, maxHeight])
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  }, [value, maxHeight]);
 
   return (
     <div
@@ -47,9 +47,9 @@ export function PromptInput({
           disabled={disabled}
           className="w-full resize-none border-none outline-none bg-transparent text-sm placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            minHeight: '24px',
+            minHeight: "24px",
             maxHeight: `${maxHeight}px`,
-            overflowY: 'auto',
+            overflowY: "auto",
           }}
           rows={1}
         />
@@ -92,5 +92,5 @@ export function PromptInput({
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -4,9 +4,13 @@ import {
   SuccessReponseSchema,
   ValidationErrorSchema,
 } from "@/schemas/common.schemas";
-import { PaginationConversationSchema } from "@/schemas/conversation.schema";
+import {
+  ConversationSchema,
+  PaginationConversationSchema,
+} from "@/schemas/conversation.schema";
 import { zValidator } from "@hono/zod-validator";
 
+import { SUCCESS_RESPONSE } from "@/constants/success-response";
 import { MessageSchema, UserMessageSchema } from "@/schemas/message.schema";
 import { sessionMiddleware } from "@/server/common/middlewares/session.middleware";
 import { Env } from "@/server/common/types/types";
@@ -15,7 +19,10 @@ import { zodValidationHook } from "@/server/common/utils/zod-validation-hook";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { UIMessage } from "ai";
 import {
+  addFavoriteConversation,
+  deleteFavoriteConversation,
   findAllConversations,
+  findFavorites,
   removeConversation,
   updateConversation,
 } from "./conversation.service";
@@ -25,6 +32,7 @@ const conversationRoute = new OpenAPIHono<Env>();
 // Register session middleware
 conversationRoute.use(sessionMiddleware);
 
+// Get All conversations with pagination
 const findAllRoute = createRoute({
   method: "get",
   path: "/",
@@ -67,6 +75,7 @@ conversationRoute.openapi(findAllRoute, async (c) => {
   return c.json(createSuccessResponse(RESPONSE_STATUS.OK, conversations), 200);
 });
 
+// Receive Message from Client
 conversationRoute.openAPIRegistry.registerPath({
   path: "/",
   method: "post",
@@ -217,5 +226,113 @@ conversationRoute.openapi(
   },
   zodValidationHook
 );
+
+/*Favorite Routes */
+
+// Find favorite conversations
+const findFavoritesRoute = createRoute({
+  method: "get",
+  path: "/favorites",
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema.extend({
+            data: z.array(
+              ConversationSchema.extend({
+                isFavorite: z.boolean().openapi({ example: true }),
+              })
+            ),
+          }),
+        },
+      },
+      description: "요청 성공 응답",
+    },
+  },
+});
+
+conversationRoute.openapi(findFavoritesRoute, async (c) => {
+  const user = c.get("user");
+
+  const conversations = await findFavorites(user.id);
+
+  return c.json(createSuccessResponse(RESPONSE_STATUS.OK, conversations), 200);
+});
+
+// 즐겨찾기 추가
+const addFavoriteRoute = createRoute({
+  method: "post",
+  path: "/:conversationId/favorites",
+  request: {
+    params: z.object({
+      conversationId: z.uuid(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema,
+        },
+      },
+      description: "요청 성공 응답",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ValidationErrorSchema,
+        },
+      },
+      description: "요청 형식 오류",
+    },
+  },
+});
+
+conversationRoute.openapi(addFavoriteRoute, async (c) => {
+  const { conversationId } = c.req.valid("param");
+  const user = c.get("user");
+
+  await addFavoriteConversation(user.id, conversationId);
+
+  return c.json(SUCCESS_RESPONSE, 200);
+});
+
+// 즐겨찾기 제거
+const deleteFavoriteRoute = createRoute({
+  method: "delete",
+  path: "/:conversationId/favorites",
+  request: {
+    params: z.object({
+      conversationId: z.uuid(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema,
+        },
+      },
+      description: "",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ValidationErrorSchema,
+        },
+      },
+      description: "요청 형식 오류",
+    },
+  },
+});
+
+conversationRoute.openapi(deleteFavoriteRoute, async (c) => {
+  const { conversationId } = c.req.valid("param");
+  const user = c.get("user");
+
+  await deleteFavoriteConversation(user.id, conversationId);
+
+  return c.json(SUCCESS_RESPONSE, 200);
+});
 
 export default conversationRoute;

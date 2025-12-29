@@ -42,6 +42,7 @@ export const favoriteConversations = pgTable(
     conversationId: uuid("conversation_id").references(() => conversations.id, {
       onDelete: "cascade",
     }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
     unique("unique_user_conversation").on(table.userId, table.conversationId),
@@ -58,7 +59,6 @@ export const messages = pgTable(
     role: messageRoleEnum("role").notNull(),
     metadata: jsonb("metadata").$type<MyUIMessage["metadata"]>().notNull(),
     parts: jsonb("parts").$type<MyUIMessage["parts"]>().notNull(),
-    modelProvider: text("model_provider"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("idx_messages_created_at").on(table.createdAt)]

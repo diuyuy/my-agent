@@ -7,6 +7,7 @@ export const ConversationSchema = z.object({
   title: z.string().openapi({ example: "대화 1" }),
   createdAt: z.date(),
   updatedAt: z.date(),
+  isFavorite: z.boolean(),
 });
 
 export const PaginationConversationSchema =
