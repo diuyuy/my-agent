@@ -1,11 +1,12 @@
-import { messageRoleEnum } from "@/db/schema/enums";
 import z from "zod";
 
 export const MessageSchema = z.object({
-  content: z.string().nonempty(),
-  role: z.enum([messageRoleEnum.enumValues[0], messageRoleEnum.enumValues[1]]),
+  message: z.unknown(),
+  conversationId: z.uuid().nonempty().optional(),
   modelProvider: z.string().nonempty(),
 });
+
+export type SendMessageDto = z.infer<typeof MessageSchema>;
 
 export const UserMessageSchema = MessageSchema;
 

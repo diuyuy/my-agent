@@ -7,7 +7,7 @@ import { useSidebar } from "../ui/sidebar";
 export default function AppSidebarTrigger() {
   const { toggleSidebar } = useSidebar();
   return (
-    <Button size={"icon"} variant={"ghost"} onClick={toggleSidebar}>
+    <Button size={"icon-sm"} variant={"ghost"} onClick={toggleSidebar}>
       <PanelLeftIcon className="text-foreground" />
     </Button>
   );

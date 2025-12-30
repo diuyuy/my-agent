@@ -1,18 +1,35 @@
 import { db } from "@/db/db";
 import { messages } from "@/db/schema/schema";
-import { CreateMessageDto } from "@/schemas/message.schema";
+import { eq } from "drizzle-orm/sql";
+import { MyUIMessage } from "../ai/ai.schemas";
 
 export const createMessage = async (
   conversationId: string,
-  createMessageDto: CreateMessageDto
+  createMessageDto: MyUIMessage
 ) => {
   const [newMessage] = await db
     .insert(messages)
     .values({
-      conversationId,
       ...createMessageDto,
+      conversationId,
     })
     .returning();
 
   return newMessage;
+};
+
+export const insertMessages = async (
+  conversationId: string,
+  uiMessages: MyUIMessage[]
+) => {
+  await db
+    .insert(messages)
+    .values(uiMessages.map((msg) => ({ conversationId, ...msg })));
+};
+
+export const loadMessages = async (conversationId: string) => {
+  return db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, conversationId));
 };

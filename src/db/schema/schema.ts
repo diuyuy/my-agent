@@ -52,12 +52,12 @@ export const favoriteConversations = pgTable(
 export const messages = pgTable(
   "messages",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: text("id").primaryKey(),
     conversationId: uuid("conversation_id")
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
     role: messageRoleEnum("role").notNull(),
-    metadata: jsonb("metadata").$type<MyUIMessage["metadata"]>().notNull(),
+    metadata: jsonb("metadata").$type<MyUIMessage["metadata"]>(),
     parts: jsonb("parts").$type<MyUIMessage["parts"]>().notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -66,7 +66,7 @@ export const messages = pgTable(
 
 export const messageAttachments = pgTable("message_attachments", {
   id: uuid("id").primaryKey().defaultRandom(),
-  messageId: uuid("message_id")
+  messageId: text("message_id")
     .notNull()
     .references(() => messages.id, { onDelete: "cascade" }),
   fileType: fileTypeEnum("file_type").notNull(),
@@ -78,7 +78,7 @@ export const messageAttachments = pgTable("message_attachments", {
 
 export const toolInvocations = pgTable("tool_invocations", {
   id: uuid("id").primaryKey().defaultRandom(),
-  messageId: uuid("message_id")
+  messageId: text("message_id")
     .notNull()
     .references(() => messages.id, { onDelete: "cascade" }),
   toolName: text("tool_name").notNull(),

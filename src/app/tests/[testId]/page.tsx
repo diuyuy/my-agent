@@ -3,16 +3,16 @@
 import { MyUIMessage } from "@/server/features/ai/ai.schemas";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-export default function TestPage() {
-  const pathname = usePathname();
+export default function TestIdPage() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, error, setMessages } = useChat<MyUIMessage>({
+  console.log("Test ID Page!!!!");
+
+  const { messages, sendMessage, error } = useChat<MyUIMessage>({
     transport: new DefaultChatTransport({
       api: "/api/conversations",
       prepareSendMessagesRequest: ({ messages, id }) => {
@@ -29,7 +29,6 @@ export default function TestPage() {
     onFinish: ({ message }) => {
       const conversationId = message.metadata?.conversationId;
       console.log("🚀 ~ TestPage ~ conversationId:", conversationId);
-      window.history.pushState(null, "", `tests/${conversationId}`);
     },
   });
 
@@ -37,12 +36,6 @@ export default function TestPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  useEffect(() => {
-    if (pathname === "/tests") {
-      setMessages([]);
-    }
-  }, [pathname, setMessages]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

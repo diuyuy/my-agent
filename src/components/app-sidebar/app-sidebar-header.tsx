@@ -17,16 +17,17 @@ export default function AppSidebarHeader() {
     <SidebarHeader>
       <div className="space-y-4">
         <div
-          className={cn(
-            `flex ${open ? "justify-between" : "justify-center"} items-center`,
-            "items-center"
-          )}
+          className={cn("flex items-center justify-between", "overflow-hidden")}
         >
-          {open && (
-            <p className="whitespace-nowrap text-lg font-semibold">
-              {"My Agent"}
-            </p>
-          )}
+          <div
+            className={cn(
+              "overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out",
+              open ? "w-auto opacity-100 mr-2" : "w-0 opacity-0 mr-0"
+            )}
+          >
+            <p className="text-lg font-semibold">My Agent</p>
+          </div>
+
           <AppSidebarTrigger />
         </div>
         <SidebarMenu>

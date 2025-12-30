@@ -32,8 +32,13 @@ export default async function AppSidebarHistoryMenu() {
 
   return (
     <SidebarMenu>
-      {conversations.map(({ id, title }) => (
-        <AppSidebarMenuItem key={id} title={title} />
+      {conversations.map(({ id, title, isFavorite }) => (
+        <AppSidebarMenuItem
+          key={id}
+          conversationId={id}
+          title={title}
+          isFavorite={isFavorite}
+        />
       ))}
       <SidebarMenuItem className="group-data-[collapsible=icon]:opacity-0">
         <SidebarMenuButton>

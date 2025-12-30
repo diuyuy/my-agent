@@ -5,11 +5,17 @@ export const SuccessReponseSchema = z.object({
   message: z.string().openapi({ example: "요청이 성공적으로 처리되었습니다." }),
 });
 
+export type SuccessResponse<T> = z.infer<typeof SuccessReponseSchema> & {
+  data?: T;
+};
+
 export const ErrorResponseSchema = z.object({
   success: z.boolean().openapi({ example: false }),
   code: z.string(),
   message: z.string(),
 });
+
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
 export const ValidationErrorSchema = z.object({
   success: z.boolean().openapi({ example: false }),

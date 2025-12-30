@@ -12,7 +12,7 @@ import {
   SidebarMenuItem,
 } from "../ui/sidebar";
 import { Spinner } from "../ui/spinner";
-import AppSidebarFavoritesMenu from "./app-sidebar-favorite-group";
+import AppSidebarFavoritesMenu from "./app-sidebar-favorite-menu";
 import AppSidebarHeader from "./app-sidebar-header";
 import AppSidebarHistoryMenu from "./app-sidebar-history-menu";
 

@@ -2,6 +2,7 @@ import Providers from "@/components/providers";
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const pretendardSans = localFont({
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${pretendardSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   );

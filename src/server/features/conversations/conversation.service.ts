@@ -1,68 +1,107 @@
 import { RESPONSE_STATUS } from "@/constants/response-status";
 import { db } from "@/db/db";
 import { conversations, favoriteConversations } from "@/db/schema/schema";
-import {
-  CreateMessageDto,
-  UpdateConversationDto,
-} from "@/schemas/message.schema";
 import { CommonHttpException } from "@/server/common/errors/common-http-exception";
 import { createCursor } from "@/server/common/utils/create-cursor";
 import { createPaginationResponse } from "@/server/common/utils/response-utils";
 import { PaginationOption } from "@/types/types";
-import { and, count, eq, gte } from "drizzle-orm/sql";
-import { generateStreamText } from "../ai/ai.service";
-import { createMessage } from "../messages/message.service";
+import {
+  convertToModelMessages,
+  streamText,
+  TypeValidationError,
+  validateUIMessages,
+} from "ai";
+import { and, count, eq, gte, isNull } from "drizzle-orm/sql";
+import { MyUIMessage } from "../ai/ai.schemas";
+import { generateTitle, getModel, myIdGenerator } from "../ai/ai.service";
+import { insertMessages } from "../messages/message.service";
 
-export const createConversation = async (
+export const handleConversation = async (
   userId: string,
-  createConversationDto: CreateMessageDto
+  message: MyUIMessage,
+  modelProvider: string,
+  conversationId?: string
 ) => {
-  const [newConversation] = await db
-    .insert(conversations)
-    .values({ userId, title: createConversationDto.content })
-    .returning();
-
-  await createMessage(newConversation.id, createConversationDto);
-
-  const result = await generateStreamText([
-    {
-      content: createConversationDto.content,
-      role: createConversationDto.role,
-    },
-  ]);
-
-  return result.toUIMessageStreamResponse({
-    headers: {
-      "Conversation-Id": newConversation.id,
-    },
-  });
+  if (!conversationId) {
+    return generateNewConversation(userId, message, modelProvider);
+  }
 };
 
-export const updateConversation = async (
+const generateNewConversation = async (
   userId: string,
-  conversationId: string,
-  messages: UpdateConversationDto
+  message: MyUIMessage,
+  modelProvider: string
 ) => {
-  await validateAccessability(userId, conversationId);
+  try {
+    const serverSideUserId = myIdGenerator();
+    const userMessageWithServerId = { ...message, id: serverSideUserId };
+    const validatedMessages = await validateUIMessages<MyUIMessage>({
+      messages: [userMessageWithServerId],
+    });
 
-  const lastMessage = messages.at(-1);
-  if (!lastMessage) {
-    throw new CommonHttpException(RESPONSE_STATUS.INVALID_REQUEST_FORMAT);
+    const newConversationId = await createConversation(userId);
+
+    return streamText({
+      model: getModel(modelProvider),
+      messages: await convertToModelMessages(validatedMessages),
+    }).toUIMessageStreamResponse({
+      originalMessages: [message],
+      generateMessageId: myIdGenerator,
+      messageMetadata: () => ({
+        modelProvider,
+        conversationId: newConversationId,
+      }),
+      onFinish: async ({ messages }) => {
+        const title = await generateTitle(messages);
+        await Promise.all([
+          updateConversationTitle(newConversationId, title),
+          insertMessages(newConversationId, messages),
+        ]);
+      },
+    });
+  } catch (error) {
+    if (error instanceof TypeValidationError) {
+      throw new CommonHttpException(RESPONSE_STATUS.INVALID_REQUEST_FORMAT);
+    } else {
+      console.error(error);
+      throw new CommonHttpException(RESPONSE_STATUS.INTERNAL_SERVER_ERROR);
+    }
   }
+};
 
-  await createMessage(conversationId, lastMessage);
+const createConversation = async (userId: string) => {
+  const [newConversation] = await db
+    .insert(conversations)
+    .values({ userId, title: "임시 타이틀" })
+    .returning();
 
-  const result = await generateStreamText(
-    messages.map(({ content, role }) => ({ content, role }))
-  );
+  return newConversation.id;
+};
 
-  return result.toUIMessageStreamResponse();
+export const updateConversationTitle = async (
+  conversationId: string,
+  title: string,
+  shouldValidate?: boolean,
+  userId?: string
+) => {
+  if (shouldValidate && userId)
+    await validateAccessability(userId, conversationId);
+
+  await db
+    .update(conversations)
+    .set({ title })
+    .where(eq(conversations.id, conversationId));
 };
 
 export const findAllConversations = async (
   userId: string,
-  { cursor, limit }: PaginationOption
+  {
+    cursor,
+    limit,
+    includeFavorite,
+  }: PaginationOption & { includeFavorite?: boolean }
 ) => {
+  console.log("🚀 ~ findAllConversations ~ includeFavorite:", includeFavorite);
   let decodedCursor: Date | null;
 
   if (!cursor) {
@@ -88,7 +127,8 @@ export const findAllConversations = async (
     .where(
       and(
         eq(conversations.userId, userId),
-        decodedCursor ? gte(conversations.updatedAt, decodedCursor) : undefined
+        decodedCursor ? gte(conversations.updatedAt, decodedCursor) : undefined,
+        !includeFavorite ? isNull(favoriteConversations.id) : undefined
       )
     )
     .orderBy(conversations.updatedAt)
