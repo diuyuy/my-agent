@@ -3,7 +3,7 @@ import { messages } from "@/db/schema/schema";
 import { createCursor } from "@/server/common/utils/create-cursor";
 import { createPaginationResponse } from "@/server/common/utils/response-utils";
 import { PaginationOption } from "@/types/types";
-import { and, count, eq, lte } from "drizzle-orm/sql";
+import { and, count, desc, eq, lte } from "drizzle-orm/sql";
 import { MyUIMessage } from "../ai/ai.schemas";
 
 export const createMessage = async (
@@ -25,9 +25,13 @@ export const insertMessages = async (
   conversationId: string,
   uiMessages: MyUIMessage[]
 ) => {
-  await db
-    .insert(messages)
-    .values(uiMessages.map((msg) => ({ conversationId, ...msg })));
+  for (const message of uiMessages) {
+    await db.insert(messages).values({ conversationId, ...message });
+  }
+
+  // await db
+  //   .insert(messages)
+  //   .values(uiMessages.map((msg) => ({ conversationId, ...msg })));
 };
 
 export const findAllMessages = async (
@@ -39,7 +43,7 @@ export const findAllMessages = async (
   if (!cursor) {
     decodedCursor = null;
   } else {
-    const decodedString = Buffer.from(cursor).toString();
+    const decodedString = Buffer.from(cursor, "base64").toString();
     decodedCursor = new Date(decodedString);
   }
 
@@ -52,7 +56,7 @@ export const findAllMessages = async (
         decodedCursor ? lte(messages.createdAt, decodedCursor) : undefined
       )
     )
-    .orderBy(messages.createdAt)
+    .orderBy(desc(messages.createdAt))
     .limit(limit + 1);
 
   const [{ count: totalElements }] = await db
@@ -62,6 +66,7 @@ export const findAllMessages = async (
 
   const nextValue = result.length > limit ? result.pop()?.createdAt : null;
   const nextCursor = nextValue ? createCursor(nextValue.toISOString()) : null;
+  result.sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
 
   return createPaginationResponse(
     result.map(({ id, role, parts, metadata }) => ({
