@@ -27,9 +27,14 @@ export const insertMessages = async (
     .values(uiMessages.map((msg) => ({ conversationId, ...msg })));
 };
 
-export const loadMessages = async (conversationId: string) => {
-  return db
+export const loadPreviousMessages = async (conversationId: string) => {
+  const result = await db
     .select()
     .from(messages)
     .where(eq(messages.conversationId, conversationId));
+
+  return result.map(({ metadata, ...rest }) => ({
+    ...rest,
+    metadata: metadata === null ? undefined : metadata,
+  }));
 };
