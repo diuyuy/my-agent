@@ -16,3 +16,11 @@ export const PaginationConversationSchema =
 export const UpdateUserMessageSchema = z.object({
   messages: z.array(UserMessageSchema),
 });
+
+export const UpdateConversationTitleSchema = z.object({
+  title: z.string().nonempty(),
+});
+
+export type UpdateConversationTitleDto = z.infer<
+  typeof UpdateConversationTitleSchema
+>;

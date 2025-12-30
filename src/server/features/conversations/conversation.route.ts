@@ -3,6 +3,7 @@ import { SuccessReponseSchema } from "@/schemas/common.schemas";
 import {
   ConversationSchema,
   PaginationConversationSchema,
+  UpdateConversationTitleSchema,
 } from "@/schemas/conversation.schema";
 
 import { CACHE_TAG } from "@/constants/cache-tag";
@@ -24,8 +25,9 @@ import {
   deleteFavoriteConversation,
   findAllConversations,
   findFavorites,
-  handleConversation,
+  handleSentMessage,
   removeConversation,
+  updateConversationTitle,
 } from "./conversation.service";
 
 const conversationRoute = new OpenAPIHono<Env>();
@@ -41,6 +43,7 @@ const findAllRoute = createRoute({
     query: z.object({
       cursor: z.string().optional(),
       limit: z.coerce.number().min(1),
+      includeFavorite: z.coerce.boolean().optional(),
     }),
   },
   responses: {
@@ -59,11 +62,12 @@ const findAllRoute = createRoute({
 });
 
 conversationRoute.openapi(findAllRoute, async (c) => {
-  const { cursor, limit } = c.req.valid("query");
+  const { cursor, limit, includeFavorite } = c.req.valid("query");
   const user = c.get("user");
   const conversations = await findAllConversations(user.id, {
     cursor,
-    limit: limit,
+    limit,
+    includeFavorite,
   });
 
   return c.json(createSuccessResponse(RESPONSE_STATUS.OK, conversations), 200);
@@ -107,7 +111,7 @@ conversationRoute.post(
     console.log("🚀 ~ modelProvider:", modelProvider);
     const user = c.get("user");
 
-    return handleConversation(
+    return handleSentMessage(
       user.id,
       message as MyUIMessage,
       modelProvider,
@@ -157,6 +161,46 @@ conversationRoute.openapi(
   zodValidationHook
 );
 
+// Update Conversation title
+const updateConversationRoute = createRoute({
+  method: "patch",
+  path: "/:conversationId",
+  request: {
+    params: z.object({
+      conversationId: z.uuid(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateConversationTitleSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema,
+        },
+      },
+      description: "요청 성공 응답",
+    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
+    404: createErrorResponseSignature(RESPONSE_STATUS.CONVERSATION_NOT_FOUND),
+    500: createErrorResponseSignature(RESPONSE_STATUS.INTERNAL_SERVER_ERROR),
+  },
+});
+
+conversationRoute.openapi(updateConversationRoute, async (c) => {
+  const { conversationId } = c.req.valid("param");
+  const { title } = c.req.valid("json");
+  const user = c.get("user");
+
+  await updateConversationTitle(conversationId, title, true, user.id);
+
+  return c.json(SUCCESS_RESPONSE, 200);
+});
 /*Favorite Routes */
 
 // Find favorite conversations
@@ -218,6 +262,7 @@ conversationRoute.openapi(addFavoriteRoute, async (c) => {
 
   await addFavoriteConversation(user.id, conversationId);
   revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
+  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
   return c.json(SUCCESS_RESPONSE, 200);
 });
@@ -251,6 +296,7 @@ conversationRoute.openapi(deleteFavoriteRoute, async (c) => {
 
   await deleteFavoriteConversation(user.id, conversationId);
   revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
+  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
   return c.json(SUCCESS_RESPONSE, 200);
 });
