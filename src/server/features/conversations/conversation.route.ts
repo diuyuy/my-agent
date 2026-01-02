@@ -112,6 +112,7 @@ conversationRoute.post(
     const { message, modelProvider, conversationId } = c.req.valid("json");
     console.log("🚀 ~ modelProvider:", modelProvider);
     const user = c.get("user");
+    revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
     return handleSentMessage(
       user.id,
@@ -200,6 +201,8 @@ conversationRoute.openapi(updateConversationRoute, async (c) => {
   const user = c.get("user");
 
   await updateConversationTitle(conversationId, title, true, user.id);
+  revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
+  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
   return c.json(SUCCESS_RESPONSE, 200);
 });

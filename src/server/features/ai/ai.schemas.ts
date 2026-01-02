@@ -1,10 +1,12 @@
 import { UIMessage } from "ai";
 import z from "zod";
 
-export const metadataSchema = z.object({
-  conversationId: z.uuid().optional(),
-  modelProvider: z.string().nonempty(),
-});
+export const metadataSchema = z
+  .object({
+    conversationId: z.uuid().optional(),
+    modelProvider: z.string().nonempty(),
+  })
+  .optional();
 
 export type MyMetadataPart = z.infer<typeof metadataSchema>;
 

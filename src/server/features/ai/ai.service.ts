@@ -22,7 +22,10 @@ export const generateUIMessageStreamResponse = async ({
   conversationId: string;
   messages: MyUIMessage[];
   modelProvider: string;
-  onFinish: (response: { messages: MyUIMessage[] }) => void;
+  onFinish: (response: {
+    messages: MyUIMessage[];
+    responseMessage: MyUIMessage;
+  }) => void;
 }) => {
   return streamText({
     model: google("gemini-2.5-flash"),

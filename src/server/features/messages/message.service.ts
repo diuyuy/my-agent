@@ -25,13 +25,12 @@ export const insertMessages = async (
   conversationId: string,
   uiMessages: MyUIMessage[]
 ) => {
-  for (const message of uiMessages) {
-    await db.insert(messages).values({ conversationId, ...message });
-  }
+  const msgs = uiMessages.map((message) => ({ conversationId, ...message }));
 
-  // await db
-  //   .insert(messages)
-  //   .values(uiMessages.map((msg) => ({ conversationId, ...msg })));
+  await db.insert(messages).values(msgs).onConflictDoNothing();
+  for (const { role, parts, metadata } of uiMessages) {
+    console.log(JSON.stringify({ role, parts, metadata }, null, 2));
+  }
 };
 
 export const findAllMessages = async (
@@ -66,14 +65,31 @@ export const findAllMessages = async (
 
   const nextValue = result.length > limit ? result.pop()?.createdAt : null;
   const nextCursor = nextValue ? createCursor(nextValue.toISOString()) : null;
-  result.sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+  result.sort((a, b) => {
+    if (a.createdAt < b.createdAt) {
+      return -1;
+    }
+
+    /* createdAt이 같을 경우, 하나의 요청 - 응답 주기에서 생성된 메시지
+      이때 사용자 가 생성한 답이 맨 처음에 오도록 설정.
+    */
+    if (a.createdAt === b.createdAt) {
+      if (a.role === "user") {
+        return -1;
+      }
+
+      return 1;
+    }
+
+    return 1;
+  });
 
   return createPaginationResponse(
     result.map(({ id, role, parts, metadata }) => ({
       id,
       role,
       parts,
-      metadata,
+      metadata: metadata ?? undefined,
     })),
     {
       nextCursor,
@@ -85,7 +101,12 @@ export const findAllMessages = async (
 
 export const loadPreviousMessages = async (conversationId: string) => {
   const result = await db
-    .select()
+    .select({
+      id: messages.id,
+      role: messages.role,
+      parts: messages.parts,
+      metadata: messages.metadata,
+    })
     .from(messages)
     .where(eq(messages.conversationId, conversationId));
 

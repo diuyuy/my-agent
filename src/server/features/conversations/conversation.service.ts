@@ -6,7 +6,7 @@ import { createCursor } from "@/server/common/utils/create-cursor";
 import { createPaginationResponse } from "@/server/common/utils/response-utils";
 import { PaginationOption } from "@/types/types";
 import { TypeValidationError, validateUIMessages } from "ai";
-import { and, count, eq, gte, isNull } from "drizzle-orm/sql";
+import { and, count, desc, eq, gte, isNull } from "drizzle-orm/sql";
 import { metadataSchema, MyUIMessage } from "../ai/ai.schemas";
 import {
   generateTitle,
@@ -100,6 +100,10 @@ const generateAIResponse = async (
 ) => {
   try {
     const previousMessages = await loadPreviousMessages(conversationId);
+    console.log(
+      "🚀 ~ generateAIResponse ~ previousMessages:",
+      JSON.stringify(previousMessages, null, 2)
+    );
     const validatedMessages = await validateUIMessages<MyUIMessage>({
       messages: [...previousMessages, message],
       metadataSchema,
@@ -109,12 +113,21 @@ const generateAIResponse = async (
       conversationId,
       messages: validatedMessages,
       modelProvider,
-      onFinish: async ({ messages }) => {
+      onFinish: async ({ messages, responseMessage }) => {
+        console.log(
+          "🚀 ~ generateAIResponse ~ responseMessage:",
+          JSON.stringify(responseMessage, null, 2)
+        );
+        console.log(
+          "🚀 ~ generateAIResponse ~ messages:",
+          JSON.stringify(messages, null, 2)
+        );
         await insertMessages(conversationId, messages);
       },
     });
   } catch (error) {
     if (error instanceof TypeValidationError) {
+      console.log("TypeValidation Error Occured");
       throw new CommonHttpException(RESPONSE_STATUS.INVALID_REQUEST_FORMAT);
     } else {
       console.error(error);
@@ -138,6 +151,7 @@ export const updateConversationTitle = async (
   shouldValidate?: boolean,
   userId?: string
 ) => {
+  console.log("sfsdf");
   if (shouldValidate && userId)
     await validateAccessability(userId, conversationId);
 
@@ -155,7 +169,6 @@ export const findAllConversations = async (
     includeFavorite,
   }: PaginationOption & { includeFavorite?: boolean }
 ) => {
-  console.log("🚀 ~ findAllConversations ~ includeFavorite:", includeFavorite);
   let decodedCursor: Date | null;
 
   if (!cursor) {
@@ -185,7 +198,7 @@ export const findAllConversations = async (
         !includeFavorite ? isNull(favoriteConversations.id) : undefined
       )
     )
-    .orderBy(conversations.updatedAt)
+    .orderBy(desc(conversations.updatedAt))
     .limit(limit + 1);
 
   const nextValue = result.length > limit ? result.pop()?.updatedAt : null;
@@ -207,6 +220,20 @@ export const findAllConversations = async (
       hasNext: !!nextCursor,
     }
   );
+};
+
+export const findConversationById = async (
+  userId: string,
+  conversationId: string
+) => {
+  await validateAccessability(userId, conversationId);
+
+  const [result] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, conversationId));
+
+  return result;
 };
 
 export const getMessagesInConversation = async (
@@ -234,7 +261,7 @@ export const findFavorites = async (userId: string) => {
       eq(conversations.id, favoriteConversations.conversationId)
     )
     .where(eq(conversations.userId, userId))
-    .orderBy(favoriteConversations.createdAt);
+    .orderBy(desc(favoriteConversations.createdAt));
 
   return result.map(({ id, title, createdAt, updatedAt }) => ({
     id,
