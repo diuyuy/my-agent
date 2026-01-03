@@ -1,12 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Plus, Send } from "lucide-react";
+import { ChevronDown, Plus, Send, SquareIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface PromptInputProps {
   value: string;
   setValue: (value: string) => void;
+  stop: () => void;
+  isSending: boolean;
   className?: string;
   placeholder?: string;
   disabled?: boolean;
@@ -16,13 +18,13 @@ interface PromptInputProps {
 export function PromptInput({
   value,
   setValue,
+  isSending,
   className = "",
   placeholder = "메시지를 입력하세요...",
   disabled = false,
   maxHeight = 200,
 }: PromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -98,7 +100,22 @@ export function PromptInput({
           </Button>
 
           {/* Send Button */}
-          <Button
+          {isSending ? (
+            <Button type="button" onClick={stop}>
+              <SquareIcon className="size-4" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              variant="default"
+              size="icon-sm"
+              disabled={disabled || !value.trim()}
+              className="shrink-0"
+            >
+              <Send className="size-4" />
+            </Button>
+          )}
+          {/* <Button
             type="submit"
             variant="default"
             size="icon-sm"
@@ -106,7 +123,7 @@ export function PromptInput({
             className="shrink-0"
           >
             <Send className="size-4" />
-          </Button>
+          </Button> */}
         </div>
       </div>
     </div>

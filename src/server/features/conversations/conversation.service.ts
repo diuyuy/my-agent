@@ -21,7 +21,6 @@ import { metadataSchema, MyUIMessage } from "../ai/ai.schemas";
 import {
   generateTitle,
   generateUIMessageStreamResponse,
-  myIdGenerator,
 } from "../ai/ai.service";
 import {
   findAllMessages,
@@ -36,55 +35,9 @@ export const handleSentMessage = async (
   conversationId: string
 ) => {
   await validateAccessability(userId, conversationId);
-  const serverSideUserId = myIdGenerator();
-  const userMessageWithServerId = { ...message, id: serverSideUserId };
 
-  // conversationId가 없을 경우 새로운 conversation 생성
-  // if (!conversationId) {
-  //   return generateNewConversationAndAIResponse(
-  //     userId,
-  //     userMessageWithServerId,
-  //     modelProvider
-  //   );
-  // }
-
-  return generateAIResponse(
-    conversationId,
-    userMessageWithServerId,
-    modelProvider
-  );
+  return generateAIResponse(conversationId, message, modelProvider);
 };
-
-// const generateNewConversationAndAIResponse = async (
-//   userId: string,
-//   message: MyUIMessage,
-//   modelProvider: string
-// ) => {
-//   try {
-//     const validatedMessages = await validateUIMessages<MyUIMessage>({
-//       messages: [message],
-//     });
-
-//     const title = generateTitle(message);
-//     const newConversationId = await createConversation(userId, title);
-
-//     return generateUIMessageStreamResponse({
-//       conversationId: newConversationId,
-//       messages: validatedMessages,
-//       modelProvider,
-//       onFinish: async ({ messages }) => {
-//         await insertMessages(newConversationId, messages);
-//       },
-//     });
-//   } catch (error) {
-//     if (error instanceof TypeValidationError) {
-//       throw new CommonHttpException(RESPONSE_STATUS.INVALID_REQUEST_FORMAT);
-//     } else {
-//       console.error(error);
-//       throw new CommonHttpException(RESPONSE_STATUS.INTERNAL_SERVER_ERROR);
-//     }
-//   }
-// };
 
 const generateAIResponse = async (
   conversationId: string,

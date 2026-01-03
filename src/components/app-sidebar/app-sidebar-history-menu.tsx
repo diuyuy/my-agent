@@ -1,8 +1,10 @@
 "use client";
 
+import { ROUTER_PATH } from "@/constants/router-path";
 import { useIsCreatingNewConversation } from "@/hooks/use-is-creating-new-conversation";
 import { useConversationsQuery } from "@/hooks/useConversationsQuery";
 import { MessageCircleMoreIcon } from "lucide-react";
+import Link from "next/link";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -50,9 +52,11 @@ export default function AppSidebarHistoryMenu() {
         />
       ))}
       <SidebarMenuItem className="group-data-[collapsible=icon]:opacity-0">
-        <SidebarMenuButton>
-          <MessageCircleMoreIcon />
-          모든 채팅 보기
+        <SidebarMenuButton asChild>
+          <Link href={ROUTER_PATH.SEARCH}>
+            <MessageCircleMoreIcon />
+            모든 채팅 보기
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>

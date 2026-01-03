@@ -4,6 +4,7 @@ import {
   convertToModelMessages,
   createIdGenerator,
   embedMany,
+  smoothStream,
   streamText,
 } from "ai";
 import { MyUIMessage } from "./ai.schemas";
@@ -28,6 +29,7 @@ export const generateUIMessageStreamResponse = async ({
     model: google("gemini-2.0-flash"),
     // prompt: "LLM에 대해서 500자 글자로 설명해줘.",
     messages: await convertToModelMessages(messages),
+    experimental_transform: smoothStream(),
   }).toUIMessageStreamResponse({
     originalMessages: messages,
     generateMessageId: myIdGenerator,

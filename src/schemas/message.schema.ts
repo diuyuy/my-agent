@@ -21,5 +21,16 @@ export const MessageSchema = z.object({
 
 export const UserSendMessageSchema = SendMessageSchema;
 
+export const MessageParamsSchema = z.object({
+  messageId: z.string().nonempty(),
+});
+
+export const DeleteMessagesSchema = z.object({
+  userMessageId: z.string().nonempty(),
+  aiMessageId: z.string().nonempty(),
+});
+
+export type DeleteMessagesDto = z.infer<typeof DeleteMessagesSchema>;
+
 export type CreateMessageDto = z.infer<typeof UserSendMessageSchema>;
 export type UpdateConversationDto = z.infer<typeof SendMessageSchema>[];

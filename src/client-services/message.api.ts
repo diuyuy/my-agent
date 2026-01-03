@@ -1,4 +1,5 @@
-import { ErrorResponse } from "@/schemas/common.schemas";
+import { ErrorResponse, SuccessResponse } from "@/schemas/common.schemas";
+import { DeleteMessagesDto } from "@/schemas/message.schema";
 import { MyUIMessage } from "@/server/features/ai/ai.schemas";
 import { ApiResponse, PaginationInfo } from "@/types/types";
 
@@ -25,6 +26,31 @@ export const fetchMessages = async (
   if (!response.ok) {
     const errorData: ErrorResponse = await response.json();
     throw Error(errorData.message);
+  }
+
+  return response.json();
+};
+
+export const deleteMessage = async ({
+  userMessageId,
+  aiMessageId,
+}: DeleteMessagesDto): Promise<
+  SuccessResponse<{
+    messageId: string;
+  }>
+> => {
+  const response = await fetch("/api/messages", {
+    method: "DELETE",
+    body: JSON.stringify({ userMessageId, aiMessageId }),
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData: ErrorResponse = await response.json();
+    throw new Error(errorData.message);
   }
 
   return response.json();

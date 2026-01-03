@@ -3,7 +3,8 @@ import { QUERY_KEYS } from "@/lib/utils";
 import { MyUIMessage } from "@/server/features/ai/ai.schemas";
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { DefaultChatTransport } from "ai";
+import { createIdGenerator, DefaultChatTransport } from "ai";
+import { toast } from "sonner";
 
 export const useMyChat = (
   conversationId: string,
@@ -13,6 +14,10 @@ export const useMyChat = (
   const queryClient = useQueryClient();
 
   return useChat({
+    generateId: createIdGenerator({
+      prefix: "msg",
+      size: 16,
+    }),
     messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/conversations",
@@ -33,6 +38,9 @@ export const useMyChat = (
         });
         setIsCreated();
       }
+    },
+    onError: () => {
+      toast.error("예상치 못한 오류가 발생했습니다. 다시 시도해주세요.");
     },
   });
 };

@@ -30,6 +30,13 @@ export const RESPONSE_STATUS = {
     description: "권한 오류",
   },
 
+  ACCESS_MESSAGE_DENIED: {
+    status: 403,
+    code: "ACCESS_MESSAGE_DENIED",
+    message: "해당 메시지에 접근할 권한이 없습니다.",
+    description: "권한 오류",
+  },
+
   // 404
   NOT_FOUND: {
     status: 404,
@@ -42,6 +49,13 @@ export const RESPONSE_STATUS = {
     status: 404,
     code: "CONVERSATION_NOT_FOUND",
     message: "해당 대화가 존재하지 않습니다.",
+    description: "Not Found Conversation",
+  },
+
+  MESSAGE_NOT_FOUND: {
+    status: 404,
+    code: "MESSAGE_NOT_FOUND",
+    message: "해당 메시지가 존재하지 않습니다.",
     description: "Not Found Conversation",
   },
 

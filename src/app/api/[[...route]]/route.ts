@@ -3,6 +3,7 @@ import { globalExceptionHandler } from "@/server/common/errors/global-exception-
 import { Env } from "@/server/common/types/types";
 import { zodValidationHook } from "@/server/common/utils/zod-validation-hook";
 import conversationRoute from "@/server/features/conversations/conversation.route";
+import messageRoute from "@/server/features/messages/message.route";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import { handle } from "hono/vercel";
@@ -18,6 +19,7 @@ app.on(["POST", "GET"], "/auth/*", (c) => {
 });
 
 app.route("/conversations", conversationRoute);
+app.route("/messages", messageRoute);
 
 app.doc("/doc", {
   openapi: "3.0.0",
