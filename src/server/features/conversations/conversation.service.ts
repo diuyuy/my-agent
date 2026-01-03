@@ -6,7 +6,17 @@ import { createCursor } from "@/server/common/utils/create-cursor";
 import { createPaginationResponse } from "@/server/common/utils/response-utils";
 import { PaginationOption } from "@/types/types";
 import { TypeValidationError, validateUIMessages } from "ai";
-import { and, count, desc, eq, gte, ilike, isNull } from "drizzle-orm/sql";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  isNull,
+  lte,
+} from "drizzle-orm/sql";
 import { metadataSchema, MyUIMessage } from "../ai/ai.schemas";
 import {
   generateTitle,
@@ -147,6 +157,7 @@ export const findAllConversations = async (
   {
     cursor,
     limit,
+    direction,
     includeFavorite,
     filter,
   }: PaginationOption & { includeFavorite?: boolean; filter?: string }
@@ -159,6 +170,7 @@ export const findAllConversations = async (
     const decodedString = Buffer.from(cursor, "base64").toString("utf-8");
     decodedCursor = new Date(decodedString);
   }
+  console.log("🚀 ~ findAllConversations ~ decodedCursor:", decodedCursor);
 
   const result = await db
     .select({
@@ -176,12 +188,20 @@ export const findAllConversations = async (
     .where(
       and(
         eq(conversations.userId, userId),
-        decodedCursor ? gte(conversations.updatedAt, decodedCursor) : undefined,
+        decodedCursor
+          ? direction === "desc"
+            ? lte(conversations.updatedAt, decodedCursor)
+            : gte(conversations.updatedAt, decodedCursor)
+          : undefined,
         !includeFavorite ? isNull(favoriteConversations.id) : undefined,
-        filter ? ilike(conversations.title, filter) : undefined
+        filter ? ilike(conversations.title, `%${filter}%`) : undefined
       )
     )
-    .orderBy(desc(conversations.updatedAt))
+    .orderBy(
+      direction === "desc"
+        ? desc(conversations.updatedAt)
+        : asc(conversations.updatedAt)
+    )
     .limit(limit + 1);
 
   const nextValue = result.length > limit ? result.pop()?.updatedAt : null;
@@ -197,7 +217,6 @@ export const findAllConversations = async (
     .where(
       and(
         eq(conversations.userId, userId),
-        decodedCursor ? gte(conversations.updatedAt, decodedCursor) : undefined,
         !includeFavorite ? isNull(favoriteConversations.id) : undefined,
         filter ? ilike(conversations.title, filter) : undefined
       )

@@ -7,10 +7,10 @@ type Props = {
 
 export default async function ConversationPage({ params }: Props) {
   const { conversationId } = await params;
-  console.log("🚀 ~ ChatPage ~ conversationId:", conversationId);
   const initialMessages = await findAllMessages(conversationId, {
     limit: 20,
     cursor: undefined,
+    direction: "desc",
   });
 
   return (

@@ -17,7 +17,37 @@ export async function fetchHistoryMessages(): Promise<
 > {
   const requestUrl = new URL(`${baseURL}/api/conversations`);
   requestUrl.searchParams.append("limit", String(20));
+  requestUrl.searchParams.append("direction", "desc");
   const response = await fetch(requestUrl, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData: ErrorResponse = await response.json();
+    throw new Error(errorData.message);
+  }
+
+  return response.json();
+}
+
+export async function fetchConversationsByPagination(
+  cursor?: string,
+  filter?: string
+): Promise<SuccessResponse<PagenationConversation>> {
+  const requestUrl = new URL(`${baseURL}/api/conversations`);
+  if (cursor) {
+    requestUrl.searchParams.append("cursor", cursor);
+  }
+  requestUrl.searchParams.append("limit", String(15));
+  requestUrl.searchParams.append("direction", "desc");
+  requestUrl.searchParams.append("includeFavorite", String(true));
+  requestUrl.searchParams.append("filter", String(filter));
+
+  const response = await fetch(requestUrl, {
+    method: "get",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",

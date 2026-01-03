@@ -1,4 +1,6 @@
+import { ROUTER_PATH } from "@/constants/router-path";
 import { ComputerIcon, SearchIcon } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -24,8 +26,10 @@ export default function AppSidebar() {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton>
-                <SearchIcon /> 검색
+              <SidebarMenuButton asChild>
+                <Link href={ROUTER_PATH.SEARCH}>
+                  <SearchIcon /> 검색
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

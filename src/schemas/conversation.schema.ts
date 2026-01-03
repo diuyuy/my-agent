@@ -30,3 +30,15 @@ export const UpdateConversationTitleSchema = z.object({
 export type UpdateConversationTitleDto = z.infer<
   typeof UpdateConversationTitleSchema
 >;
+
+export const ConversationParamSchema = z.object({
+  conversationId: z.uuid(),
+});
+
+export const ConversationPaginationQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().min(1),
+  direction: z.union([z.literal("asc"), z.literal("desc")]),
+  includeFavorite: z.coerce.boolean().optional(),
+  filter: z.string().optional(),
+});

@@ -1,6 +1,8 @@
 import { RESPONSE_STATUS } from "@/constants/response-status";
 import { SuccessReponseSchema } from "@/schemas/common.schemas";
 import {
+  ConversationPaginationQuerySchema,
+  ConversationParamSchema,
   ConversationSchema,
   PaginationConversationSchema,
   UpdateConversationTitleSchema,
@@ -43,12 +45,7 @@ const findAllRoute = createRoute({
   method: "get",
   path: "/",
   request: {
-    query: z.object({
-      cursor: z.string().optional(),
-      limit: z.coerce.number().min(1),
-      includeFavorite: z.coerce.boolean().optional(),
-      filter: z.string().optional(),
-    }),
+    query: ConversationPaginationQuerySchema,
   },
   responses: {
     200: {
@@ -67,11 +64,13 @@ const findAllRoute = createRoute({
 });
 
 conversationRoute.openapi(findAllRoute, async (c) => {
-  const { cursor, limit, includeFavorite, filter } = c.req.valid("query");
+  const { cursor, limit, direction, includeFavorite, filter } =
+    c.req.valid("query");
   const user = c.get("user");
   const conversations = await findAllConversations(user.id, {
     cursor,
     limit,
+    direction,
     includeFavorite,
     filter,
   });
@@ -174,9 +173,7 @@ const deleteConversationRoute = createRoute({
   method: "delete",
   path: "/:conversationId",
   request: {
-    params: z.object({
-      conversationId: z.uuid(),
-    }),
+    params: ConversationParamSchema,
   },
   responses: {
     200: {
@@ -216,9 +213,7 @@ const updateConversationRoute = createRoute({
   method: "patch",
   path: "/:conversationId",
   request: {
-    params: z.object({
-      conversationId: z.uuid(),
-    }),
+    params: ConversationParamSchema,
     body: {
       content: {
         "application/json": {
@@ -290,9 +285,7 @@ const addFavoriteRoute = createRoute({
   method: "post",
   path: "/:conversationId/favorites",
   request: {
-    params: z.object({
-      conversationId: z.uuid(),
-    }),
+    params: ConversationParamSchema,
   },
   responses: {
     200: {
@@ -324,9 +317,7 @@ const deleteFavoriteRoute = createRoute({
   method: "delete",
   path: "/:conversationId/favorites",
   request: {
-    params: z.object({
-      conversationId: z.uuid(),
-    }),
+    params: ConversationParamSchema,
   },
   responses: {
     200: {
@@ -361,14 +352,15 @@ const ParamSchema = z.object({
 const QuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().min(1),
+  direction: z.union([z.literal("asc"), z.literal("desc")]),
 });
 
 conversationRoute.openAPIRegistry.registerPath({
   method: "get",
   path: "/:conversationId/messages",
   request: {
-    params: ParamSchema,
-    query: QuerySchema,
+    params: ConversationParamSchema,
+    query: ConversationPaginationQuerySchema,
   },
   responses: {
     200: {
@@ -402,6 +394,7 @@ conversationRoute.get(
     const messages = await getMessagesInConversation(user.id, conversationId, {
       cursor,
       limit,
+      direction: "desc",
     });
 
     return c.json(createSuccessResponse(RESPONSE_STATUS.OK, messages), 200);

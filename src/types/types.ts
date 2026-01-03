@@ -12,6 +12,7 @@ export type PaginationInfo = Omit<
 export type PaginationOption = {
   cursor: string | undefined;
   limit: number;
+  direction: "asc" | "desc";
 };
 
 export type ResponseStatus = {
