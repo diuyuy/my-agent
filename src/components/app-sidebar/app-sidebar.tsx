@@ -33,8 +33,10 @@ export default function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
-                <ComputerIcon /> 워크스페이스
+              <SidebarMenuButton asChild>
+                <Link href={ROUTER_PATH.WORKSPACE}>
+                  <ComputerIcon /> 워크스페이스
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

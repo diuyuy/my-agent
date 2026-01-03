@@ -90,6 +90,20 @@ export const toolInvocations = pgTable("tool_invocations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const documentResources = pgTable(
+  "document_resources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    fileType: fileTypeEnum("file_type").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_document_resources_name").on(table.name)]
+);
+
 export const documentChunks = pgTable(
   "document_chunks",
   {
@@ -97,6 +111,9 @@ export const documentChunks = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    resourceId: uuid("resource_id")
+      .notNull()
+      .references(() => documentResources.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     tag: text("tag"), // 문서 필터링 용 태그
     embedding: vector("embedding", { dimensions: 1536 }),

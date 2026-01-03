@@ -43,6 +43,13 @@
       "when": 1767365266839,
       "tag": "0005_steep_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1767444808733,
+      "tag": "0006_jazzy_joystick",
+      "breakpoints": true
     }
   ]
 }
