@@ -1,18 +1,36 @@
 "use client";
 
+import { MyUIMessage } from "@/server/features/ai/ai.schemas";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function TestPage() {
+  const pathname = usePathname();
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, error } = useChat({
+  const { messages, sendMessage, error, setMessages } = useChat<MyUIMessage>({
     transport: new DefaultChatTransport({
       api: "/api/conversations",
+      prepareSendMessagesRequest: ({ messages, id }) => {
+        return {
+          body: {
+            message: messages[messages.length - 1],
+            id,
+            modelProvider: "gemini",
+          },
+        };
+      },
     }),
+
+    onFinish: ({ message }) => {
+      const conversationId = message.metadata?.conversationId;
+      console.log("🚀 ~ TestPage ~ conversationId:", conversationId);
+      window.history.pushState(null, "", `tests/${conversationId}`);
+    },
   });
 
   // 새 메시지가 추가되면 자동으로 스크롤
@@ -20,21 +38,18 @@ export default function TestPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (pathname === "/tests") {
+      setMessages([]);
+    }
+  }, [pathname, setMessages]);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
     setIsLoading(true);
-    sendMessage(
-      { text: inputValue },
-      {
-        body: {
-          content: inputValue.trim(),
-          role: "users",
-          modelProvider: "gemini",
-        },
-      }
-    );
+    sendMessage({ text: inputValue });
     setIsLoading(false);
     setInputValue("");
   };

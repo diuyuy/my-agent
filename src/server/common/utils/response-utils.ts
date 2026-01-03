@@ -1,3 +1,4 @@
+import { ErrorResponseSchema } from "@/schemas/common.schemas";
 import { PaginationInfo, ResponseStatus } from "@/types/types";
 
 export const createSuccessResponse = <T>(
@@ -20,5 +21,25 @@ export const createPaginationResponse = <T>(
     nextCursor,
     totalElements,
     hasNext,
+  };
+};
+
+export const createErrorResponseSignature = ({
+  code,
+  message,
+  description,
+}: ResponseStatus) => {
+  return {
+    content: {
+      "application/json": {
+        schema: ErrorResponseSchema,
+        example: {
+          success: false,
+          code,
+          message,
+        },
+      },
+    },
+    description,
   };
 };

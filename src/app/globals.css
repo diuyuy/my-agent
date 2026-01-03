@@ -123,3 +123,17 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+@layer utilities {
+  /* Chrome, Safari, Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    /* IE and Edge */
+    -ms-overflow-style: none;
+    /* Firefox */
+    scrollbar-width: none;
+  }
+}

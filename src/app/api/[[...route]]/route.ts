@@ -1,6 +1,4 @@
-import { RESPONSE_STATUS } from "@/constants/response-status";
 import { auth } from "@/lib/auth";
-import { CommonHttpException } from "@/server/common/errors/common-http-exception";
 import { globalExceptionHandler } from "@/server/common/errors/global-exception-handler";
 import { Env } from "@/server/common/types/types";
 import { zodValidationHook } from "@/server/common/utils/zod-validation-hook";
@@ -20,10 +18,6 @@ app.on(["POST", "GET"], "/auth/*", (c) => {
 });
 
 app.route("/conversations", conversationRoute);
-
-app.get("/hello", async () => {
-  throw new CommonHttpException(RESPONSE_STATUS.NOT_FOUND);
-});
 
 app.doc("/doc", {
   openapi: "3.0.0",

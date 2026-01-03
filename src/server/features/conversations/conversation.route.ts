@@ -1,28 +1,44 @@
 import { RESPONSE_STATUS } from "@/constants/response-status";
+import { SuccessReponseSchema } from "@/schemas/common.schemas";
 import {
-  ErrorResponseSchema,
-  SuccessReponseSchema,
-  ValidationErrorSchema,
-} from "@/schemas/common.schemas";
-import { PaginationConversationSchema } from "@/schemas/conversation.schema";
-import { zValidator } from "@hono/zod-validator";
+  ConversationSchema,
+  PaginationConversationSchema,
+  UpdateConversationTitleSchema,
+} from "@/schemas/conversation.schema";
 
-import { UserMessageSchema } from "@/schemas/message.schema";
+import { CACHE_TAG } from "@/constants/cache-tag";
+import { SUCCESS_RESPONSE } from "@/constants/success-response";
+import { SendMessageSchema } from "@/schemas/message.schema";
 import { sessionMiddleware } from "@/server/common/middlewares/session.middleware";
 import { Env } from "@/server/common/types/types";
-import { createSuccessResponse } from "@/server/common/utils/response-utils";
+import {
+  createErrorResponseSignature,
+  createSuccessResponse,
+} from "@/server/common/utils/response-utils";
+import { createPaginationSchema } from "@/server/common/utils/schema-utils";
 import { zodValidationHook } from "@/server/common/utils/zod-validation-hook";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { zValidator } from "@hono/zod-validator";
+import { revalidateTag } from "next/cache";
+import { MyUIMessage } from "../ai/ai.schemas";
 import {
+  addFavoriteConversation,
   createConversation,
+  deleteFavoriteConversation,
   findAllConversations,
+  findFavorites,
+  getMessagesInConversation,
+  handleSentMessage,
   removeConversation,
+  updateConversationTitle,
 } from "./conversation.service";
 
 const conversationRoute = new OpenAPIHono<Env>();
 
+// Register session middleware
 conversationRoute.use(sessionMiddleware);
 
+// Get All conversations with pagination
 const findAllRoute = createRoute({
   method: "get",
   path: "/",
@@ -30,6 +46,8 @@ const findAllRoute = createRoute({
     query: z.object({
       cursor: z.string().optional(),
       limit: z.coerce.number().min(1),
+      includeFavorite: z.coerce.boolean().optional(),
+      filter: z.string().optional(),
     }),
   },
   responses: {
@@ -43,28 +61,25 @@ const findAllRoute = createRoute({
       },
       description: "Get all conversations",
     },
-    400: {
-      content: {
-        "application/json": {
-          schema: ValidationErrorSchema,
-        },
-      },
-      description: "요청 형식 오류",
-    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
+    500: createErrorResponseSignature(RESPONSE_STATUS.INTERNAL_SERVER_ERROR),
   },
 });
 
 conversationRoute.openapi(findAllRoute, async (c) => {
-  const { cursor, limit } = c.req.valid("query");
+  const { cursor, limit, includeFavorite, filter } = c.req.valid("query");
   const user = c.get("user");
   const conversations = await findAllConversations(user.id, {
     cursor,
-    limit: limit,
+    limit,
+    includeFavorite,
+    filter,
   });
 
   return c.json(createSuccessResponse(RESPONSE_STATUS.OK, conversations), 200);
 });
 
+// Receive Message from Client
 conversationRoute.openAPIRegistry.registerPath({
   path: "/",
   method: "post",
@@ -72,7 +87,11 @@ conversationRoute.openAPIRegistry.registerPath({
     body: {
       content: {
         "application/json": {
-          schema: UserMessageSchema,
+          schema: SendMessageSchema,
+          example: {
+            UIMessage: "UIMessage Type from ai sdk",
+            modelProvider: "gemini",
+          },
         },
       },
     },
@@ -86,46 +105,69 @@ conversationRoute.openAPIRegistry.registerPath({
       },
       description: "성공 응답(텍스트 스트림)",
     },
-    400: {
-      content: {
-        "application/json": {
-          schema: ValidationErrorSchema,
-        },
-      },
-      description: "요청 형식 오류",
-    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
   },
 });
 
 conversationRoute.post(
   "/",
-  zValidator("json", UserMessageSchema, zodValidationHook),
+  zValidator("json", SendMessageSchema, zodValidationHook),
   async (c) => {
-    const createConversationDto = c.req.valid("json");
+    const { message, modelProvider, conversationId } = c.req.valid("json");
+    console.log("🚀 ~ modelProvider:", modelProvider);
     const user = c.get("user");
+    revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
-    return createConversation(user.id, createConversationDto);
+    return handleSentMessage(
+      user.id,
+      message as MyUIMessage,
+      modelProvider,
+      conversationId
+    );
   }
 );
 
-conversationRoute.openAPIRegistry.registerPath({
-  path: "/:conversationId",
+const createConversationRoute = createRoute({
   method: "post",
+  path: "/new",
   request: {
-    params: z.object({
-      conversationId: z.uuid(),
-    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            message: z.string().nonempty(),
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {
       content: {
         "application/json": {
-          schema: z.string(),
+          schema: SuccessReponseSchema.extend({
+            data: z.object({
+              conversationId: z.string(),
+            }),
+          }),
         },
       },
-      description: "",
+      description: "요청 성공 응답",
     },
   },
+});
+
+conversationRoute.openapi(createConversationRoute, async (c) => {
+  const { message } = c.req.valid("json");
+  const user = c.get("user");
+
+  const newConversationId = await createConversation(user.id, message);
+
+  return c.json(
+    createSuccessResponse(RESPONSE_STATUS.OK, {
+      conversationId: newConversationId,
+    })
+  );
 });
 
 const deleteConversationRoute = createRoute({
@@ -149,27 +191,8 @@ const deleteConversationRoute = createRoute({
       },
       description: "",
     },
-    400: {
-      content: {
-        "application/json": {
-          schema: ValidationErrorSchema,
-        },
-      },
-      description: "요청 형식 오류",
-    },
-    404: {
-      content: {
-        "application/json": {
-          schema: ErrorResponseSchema,
-          example: {
-            success: false,
-            code: RESPONSE_STATUS.CONVERSATION_NOT_FOUND.code,
-            message: RESPONSE_STATUS.CONVERSATION_NOT_FOUND.message,
-          },
-        },
-      },
-      description: "",
-    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
+    404: createErrorResponseSignature(RESPONSE_STATUS.CONVERSATION_NOT_FOUND),
   },
 });
 
@@ -180,10 +203,209 @@ conversationRoute.openapi(
     const user = c.get("user");
 
     const result = await removeConversation(user.id, conversationId);
+    revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
+    revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
     return c.json(createSuccessResponse(RESPONSE_STATUS.OK, result), 200);
   },
   zodValidationHook
+);
+
+// Update Conversation title
+const updateConversationRoute = createRoute({
+  method: "patch",
+  path: "/:conversationId",
+  request: {
+    params: z.object({
+      conversationId: z.uuid(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateConversationTitleSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema,
+        },
+      },
+      description: "요청 성공 응답",
+    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
+    404: createErrorResponseSignature(RESPONSE_STATUS.CONVERSATION_NOT_FOUND),
+    500: createErrorResponseSignature(RESPONSE_STATUS.INTERNAL_SERVER_ERROR),
+  },
+});
+
+conversationRoute.openapi(updateConversationRoute, async (c) => {
+  const { conversationId } = c.req.valid("param");
+  const { title } = c.req.valid("json");
+  const user = c.get("user");
+
+  await updateConversationTitle(conversationId, title, true, user.id);
+  revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
+  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
+
+  return c.json(SUCCESS_RESPONSE, 200);
+});
+/*Favorite Routes */
+
+// Find favorite conversations
+const findFavoritesRoute = createRoute({
+  method: "get",
+  path: "/favorites",
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema.extend({
+            data: z.array(
+              ConversationSchema.extend({
+                isFavorite: z.boolean().openapi({ example: true }),
+              })
+            ),
+          }),
+        },
+      },
+      description: "요청 성공 응답",
+    },
+  },
+});
+
+conversationRoute.openapi(findFavoritesRoute, async (c) => {
+  const user = c.get("user");
+
+  const conversations = await findFavorites(user.id);
+
+  return c.json(createSuccessResponse(RESPONSE_STATUS.OK, conversations), 200);
+});
+
+// 즐겨찾기 추가
+const addFavoriteRoute = createRoute({
+  method: "post",
+  path: "/:conversationId/favorites",
+  request: {
+    params: z.object({
+      conversationId: z.uuid(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema,
+        },
+      },
+      description: "요청 성공 응답",
+    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
+    404: createErrorResponseSignature(RESPONSE_STATUS.CONVERSATION_NOT_FOUND),
+  },
+});
+
+conversationRoute.openapi(addFavoriteRoute, async (c) => {
+  const { conversationId } = c.req.valid("param");
+  const user = c.get("user");
+
+  await addFavoriteConversation(user.id, conversationId);
+  revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
+  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
+
+  return c.json(SUCCESS_RESPONSE, 200);
+});
+
+// 즐겨찾기 제거
+const deleteFavoriteRoute = createRoute({
+  method: "delete",
+  path: "/:conversationId/favorites",
+  request: {
+    params: z.object({
+      conversationId: z.uuid(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema,
+        },
+      },
+      description: "요청 성공",
+    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
+    500: createErrorResponseSignature(RESPONSE_STATUS.INTERNAL_SERVER_ERROR),
+  },
+});
+
+conversationRoute.openapi(deleteFavoriteRoute, async (c) => {
+  const { conversationId } = c.req.valid("param");
+  const user = c.get("user");
+
+  await deleteFavoriteConversation(user.id, conversationId);
+  revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
+  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
+
+  return c.json(SUCCESS_RESPONSE, 200);
+});
+
+// Get Messages
+const ParamSchema = z.object({
+  conversationId: z.uuid(),
+});
+
+const QuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().min(1),
+});
+
+conversationRoute.openAPIRegistry.registerPath({
+  method: "get",
+  path: "/:conversationId/messages",
+  request: {
+    params: ParamSchema,
+    query: QuerySchema,
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: SuccessReponseSchema.extend({
+            data: createPaginationSchema(SendMessageSchema),
+          }),
+        },
+      },
+      description: "성공 요청 응답",
+    },
+    400: createErrorResponseSignature(RESPONSE_STATUS.INVALID_REQUEST_FORMAT),
+    403: createErrorResponseSignature(
+      RESPONSE_STATUS.ACCESS_CONVERSATION_DENIED
+    ),
+    404: createErrorResponseSignature(RESPONSE_STATUS.CONVERSATION_NOT_FOUND),
+    500: createErrorResponseSignature(RESPONSE_STATUS.INTERNAL_SERVER_ERROR),
+  },
+});
+
+conversationRoute.get(
+  "/:conversationId/messages",
+  zValidator("param", ParamSchema),
+  zValidator("query", QuerySchema),
+  async (c) => {
+    const { conversationId } = c.req.valid("param");
+    const { cursor, limit } = c.req.valid("query");
+    const user = c.get("user");
+
+    const messages = await getMessagesInConversation(user.id, conversationId, {
+      cursor,
+      limit,
+    });
+
+    return c.json(createSuccessResponse(RESPONSE_STATUS.OK, messages), 200);
+  }
 );
 
 export default conversationRoute;

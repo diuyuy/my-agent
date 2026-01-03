@@ -5,7 +5,6 @@ export const messageRoleEnum = pgEnum("message_role", [
   "user",
   "assistant",
   "system",
-  "tool",
 ]);
 
 export type MessageRole = (typeof messageRoleEnum.enumValues)[number];

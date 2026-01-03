@@ -8,7 +8,7 @@ export const globalExceptionHandler = (
   c: Context
 ) => {
   if (error instanceof CommonHttpException) {
-    console.error(error.cause);
+    console.error(error.message);
     return c.json(
       {
         success: false,
