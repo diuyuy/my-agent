@@ -11,7 +11,6 @@ import {
 import { CACHE_TAG } from "@/constants/cache-tag";
 import { SUCCESS_RESPONSE } from "@/constants/success-response";
 import { SendMessageSchema } from "@/schemas/message.schema";
-import { sessionMiddleware } from "@/server/common/middlewares/session.middleware";
 import { Env } from "@/server/common/types/types";
 import {
   createErrorResponseSignature,
@@ -36,9 +35,6 @@ import {
 } from "./conversation.service";
 
 const conversationRoute = new OpenAPIHono<Env>();
-
-// Register session middleware
-conversationRoute.use(sessionMiddleware);
 
 // Get All conversations with pagination
 const findAllRoute = createRoute({

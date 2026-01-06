@@ -1,5 +1,7 @@
+import { DocsLanguage } from "@/types/types";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import {
   convertToModelMessages,
   createIdGenerator,
@@ -9,9 +11,9 @@ import {
 } from "ai";
 import { MyUIMessage } from "./ai.schemas";
 
-export const getModel = (modelProvider: string) => {
+const getModel = (modelProvider: string) => {
   console.log("🚀 ~ getModel ~ modelProvider:", modelProvider);
-  return google("gemini-2.5-flash");
+  return google("gemini-2.0-flash");
 };
 
 export const generateUIMessageStreamResponse = async ({
@@ -26,7 +28,7 @@ export const generateUIMessageStreamResponse = async ({
   onFinish: (response: { messages: MyUIMessage[] }) => void;
 }) => {
   return streamText({
-    model: google("gemini-2.0-flash"),
+    model: getModel(modelProvider),
     // prompt: "LLM에 대해서 500자 글자로 설명해줘.",
     messages: await convertToModelMessages(messages),
     experimental_transform: smoothStream(),
@@ -74,16 +76,44 @@ export const myIdGenerator = createIdGenerator({
 });
 
 export const generateEmbeddings = async (value: string) => {
-  const chunks = generateChunks(value);
+  const chunks = await generateChunks(value);
 
-  const { embeddings } = await embedMany({
+  const { embeddings, responses } = await embedMany({
     model: openai.embeddingModel("text-embedding-3-small"),
     values: chunks,
   });
 
+  console.log(
+    "🚀 ~ generateEmbeddings ~ responses:",
+    JSON.stringify(responses, null, 2)
+  );
+
   return embeddings.map((e, i) => ({ content: chunks[i], embedding: e }));
 };
 
-export const generateChunks = (value: string) => {
-  return value.split(".");
+const generateChunks = async (value: string, docsLanguage?: DocsLanguage) => {
+  if (docsLanguage) {
+    const splitter = RecursiveCharacterTextSplitter.fromLanguage(docsLanguage);
+
+    return splitter.splitText(value);
+  }
+
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 800,
+    chunkOverlap: 80,
+    separators: [
+      "\n\n",
+      "\n",
+      " ",
+      ".",
+      ",",
+      "\u200b", // Zero-width space
+      "\uff0c", // Fullwidth comma
+      "\u3001", // Ideographic comma
+      "\uff0e", // Fullwidth full stop
+      "\u3002", // Ideographic stop
+      "",
+    ],
+  });
+  return splitter.splitText(value);
 };

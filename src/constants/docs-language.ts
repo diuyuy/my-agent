@@ -1,0 +1,18 @@
+export const DOCS_LANGUAGE = [
+  "go",
+  "html",
+  "rust",
+  "java",
+  "js",
+  "php",
+  "python",
+  "ruby",
+  "swift",
+  "cpp",
+  "proto",
+  "rst",
+  "scala",
+  "markdown",
+  "latex",
+  "sol",
+] as const;

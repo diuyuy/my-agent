@@ -11,7 +11,7 @@ import {
   vector,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
-import { fileTypeEnum, messageRoleEnum } from "./enums";
+import { fileTypeEnum, messageRoleEnum, resourceTypeEnum } from "./enums";
 
 // Tables
 export const conversations = pgTable(
@@ -98,7 +98,7 @@ export const documentResources = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    fileType: fileTypeEnum("file_type").notNull(),
+    fileType: resourceTypeEnum("file_type").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("idx_document_resources_name").on(table.name)]

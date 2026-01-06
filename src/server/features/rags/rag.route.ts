@@ -1,24 +1,25 @@
 import { RESPONSE_STATUS } from "@/constants/response-status";
+import { db } from "@/db/db";
 import { SuccessReponseSchema } from "@/schemas/common.schemas";
-import { DeleteMessagesSchema } from "@/schemas/message.schema";
+import { CreateEmbeddingSchema } from "@/schemas/rag.schema";
 import { Env } from "@/server/common/types/types";
 import {
   createErrorResponseSignature,
   createSuccessResponse,
 } from "@/server/common/utils/response-utils";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { deleteMessageById } from "./message.service";
+import { createEmbedding } from "./rag.service";
 
-const messageRoute = new OpenAPIHono<Env>();
+const ragRoute = new OpenAPIHono<Env>();
 
-const deleteMessageRoute = createRoute({
-  method: "delete",
+const createEmbeddingRoute = createRoute({
+  method: "post",
   path: "/",
   request: {
     body: {
       content: {
         "application/json": {
-          schema: DeleteMessagesSchema,
+          schema: CreateEmbeddingSchema,
         },
       },
     },
@@ -28,7 +29,7 @@ const deleteMessageRoute = createRoute({
       content: {
         "application/json": {
           schema: SuccessReponseSchema.extend({
-            data: z.literal(null),
+            data: z.null(),
           }),
         },
       },
@@ -39,13 +40,16 @@ const deleteMessageRoute = createRoute({
   },
 });
 
-messageRoute.openapi(deleteMessageRoute, async (c) => {
+ragRoute.openapi(createEmbeddingRoute, async (c) => {
   const user = c.get("user");
-  const deleteMessagesDto = c.req.valid("json");
+  const createEmbeddingDto = c.req.valid("json");
 
-  await deleteMessageById(user.id, deleteMessagesDto);
+  await createEmbedding(db, user.id, createEmbeddingDto);
 
-  return c.json(createSuccessResponse(RESPONSE_STATUS.OK, null), 200);
+  return c.json(
+    createSuccessResponse(RESPONSE_STATUS.EMBEDDING_CREATED, null),
+    200
+  );
 });
 
-export default messageRoute;
+export default ragRoute;
