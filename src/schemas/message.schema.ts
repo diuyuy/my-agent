@@ -5,6 +5,7 @@ export const SendMessageSchema = z.object({
   message: z.unknown(),
   conversationId: z.uuid().nonempty(),
   modelProvider: z.string().nonempty(),
+  isRag: z.boolean().optional(),
 });
 
 export type SendMessageDto = z.infer<typeof SendMessageSchema>;

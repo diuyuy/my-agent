@@ -155,9 +155,7 @@ export function MarkdownRenderer({
   };
 
   return (
-    <div
-      className={`prose prose-neutral dark:prose-invert w-72 md:w-3xl px-3 ${className}`}
-    >
+    <div className={`prose prose-neutral dark:prose-invert ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}

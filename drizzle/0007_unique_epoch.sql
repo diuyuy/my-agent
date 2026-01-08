@@ -1,0 +1,2 @@
+CREATE TYPE "public"."resource_type" AS ENUM('text,txt,pdf');--> statement-breakpoint
+ALTER TABLE "document_resources" ALTER COLUMN "file_type" SET DATA TYPE "public"."resource_type" USING "file_type"::text::"public"."resource_type";

@@ -24,8 +24,16 @@ type Props = {
   initialMessages?: MyUIMessage[];
 };
 export default function ChatWindow({ conversationId, initialMessages }: Props) {
-  const { consumeMessage } = useIsCreatingNewConversation();
+  const {
+    consumeMessage,
+    getRequestData,
+    modelProvider,
+    setModelProvider,
+    isRag,
+    setIsRag,
+  } = useIsCreatingNewConversation();
   const [input, setInput] = useState("");
+
   const { messages, sendMessage, status, regenerate, stop } = useMyChat(
     conversationId,
     initialMessages
@@ -35,17 +43,21 @@ export default function ChatWindow({ conversationId, initialMessages }: Props) {
     e.preventDefault();
 
     if (input.trim()) {
-      sendMessage({ text: input.trim() });
+      sendMessage(
+        { text: input.trim() },
+        {
+          body: {
+            modelProvider,
+            isRag,
+          },
+        }
+      );
       setInput("");
     }
   };
 
   const handleRegeneration = async (deleteMessagesDto: DeleteMessagesDto) => {
     try {
-      console.log(
-        "🚀 ~ handleRegeneration ~ deleteMessagesDto:",
-        deleteMessagesDto
-      );
       await deleteMessage(deleteMessagesDto);
       regenerate({ messageId: deleteMessagesDto.aiMessageId });
     } catch {
@@ -67,9 +79,14 @@ export default function ChatWindow({ conversationId, initialMessages }: Props) {
   useEffect(() => {
     const msg = consumeMessage();
     if (msg) {
-      sendMessage({ text: msg });
+      sendMessage(
+        { text: msg },
+        {
+          body: getRequestData(),
+        }
+      );
     }
-  }, [consumeMessage, sendMessage]);
+  }, [consumeMessage, getRequestData, sendMessage]);
 
   return (
     <div className="w-full mx-auto h-screen px-2 flex flex-col">
@@ -100,13 +117,6 @@ export default function ChatWindow({ conversationId, initialMessages }: Props) {
                         .join("")}
                     </MarkdownRenderer>
 
-                    {/* 5. 로딩 중일 때 스피너 표시 */}
-                    {isAiLoading && (
-                      <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                        <Spinner />
-                        <span className="text-xs">답변 생성 중...</span>
-                      </div>
-                    )}
                     {status === "error" && (
                       <div className="space-y-2">
                         <Separator />
@@ -171,11 +181,21 @@ export default function ChatWindow({ conversationId, initialMessages }: Props) {
             </div>
           );
         })}
+        {status === "submitted" && (
+          <div className="mt-2 flex items-center gap-2 text-muted-foreground">
+            <Spinner />
+            <span className="text-xs">답변 생성 중...</span>
+          </div>
+        )}
       </div>
       <form onSubmit={handleSubmit}>
         <PromptInput
           value={input}
           setValue={setInput}
+          modelProvider={modelProvider}
+          setModelProvider={setModelProvider}
+          isRag={isRag}
+          setIsRag={setIsRag}
           stop={stop}
           isSending={status === "streaming" || status === "submitted"}
         />

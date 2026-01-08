@@ -1,13 +1,39 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Plus, Send, SquareIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+} from "@/components/ui/select";
+import {
+  FileSearchIcon,
+  PaperclipIcon,
+  Plus,
+  Send,
+  SquareIcon,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface PromptInputProps {
   value: string;
   setValue: (value: string) => void;
-  stop: () => void;
+  modelProvider: string;
+  setModelProvider: (provider: string) => void;
+  isRag: boolean;
+  setIsRag: (value: boolean) => void;
+  stop?: () => void;
   isSending: boolean;
   className?: string;
   placeholder?: string;
@@ -18,6 +44,10 @@ interface PromptInputProps {
 export function PromptInput({
   value,
   setValue,
+  isRag,
+  setIsRag,
+  modelProvider,
+  setModelProvider,
   isSending,
   className = "",
   placeholder = "메시지를 입력하세요...",
@@ -75,30 +105,50 @@ export function PromptInput({
       {/* Button Section */}
       <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-0">
         {/* Left: Plus button */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          disabled={disabled}
-          className="shrink-0"
-        >
-          <Plus className="size-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={disabled}
+              className="shrink-0"
+            >
+              <Plus className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>
+              <PaperclipIcon />
+              파일 업로드
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={isRag}
+              onCheckedChange={setIsRag}
+            >
+              <FileSearchIcon /> RAG
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Center & Right: Model selector and Send button */}
         <div className="flex items-center gap-2">
           {/* Model Selector Button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={disabled}
-            className="gap-1"
-          >
-            <span className="text-xs">GPT-4</span>
-            <ChevronDown className="size-3" />
-          </Button>
-
+          <Select defaultValue={modelProvider} onValueChange={setModelProvider}>
+            <SelectTrigger>{modelProvider}</SelectTrigger>
+            <SelectContent position="popper">
+              <SelectGroup>
+                <SelectLabel>Google</SelectLabel>
+                <SelectItem value={"gemini-2.0-flash"}>
+                  gemini-2.0-flash
+                </SelectItem>
+                <SelectItem value={"gemini-2.5-flash"}>
+                  gemini-2.5-flash
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           {/* Send Button */}
           {isSending ? (
             <Button type="button" onClick={stop}>
@@ -115,15 +165,6 @@ export function PromptInput({
               <Send className="size-4" />
             </Button>
           )}
-          {/* <Button
-            type="submit"
-            variant="default"
-            size="icon-sm"
-            disabled={disabled || !value.trim()}
-            className="shrink-0"
-          >
-            <Send className="size-4" />
-          </Button> */}
         </div>
       </div>
     </div>

@@ -6,9 +6,9 @@ import {
   removeConversationFromFavorites,
   updateConversationTitle,
 } from "@/client-services/conversation.api";
+import { QUERY_KEYS } from "@/constants/query-keys";
 import { ROUTER_PATH } from "@/constants/router-path";
 import { useUpdateTitleForm } from "@/hooks/useUpdateTitleForm";
-import { QUERY_KEYS } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { EllipsisIcon, PencilIcon, StarIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";

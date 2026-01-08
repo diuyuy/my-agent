@@ -1,5 +1,5 @@
+import { QUERY_KEYS } from "@/constants/query-keys";
 import { useIsCreatingNewConversation } from "@/hooks/use-is-creating-new-conversation";
-import { QUERY_KEYS } from "@/lib/utils";
 import { MyUIMessage } from "@/server/features/ai/ai.schemas";
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,12 +21,12 @@ export const useMyChat = (
     messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/conversations",
-      prepareSendMessagesRequest: ({ messages }) => {
+      prepareSendMessagesRequest: ({ messages, body }) => {
         return {
           body: {
             message: messages[messages.length - 1],
-            modelProvider: "gemini",
             conversationId,
+            ...body,
           },
         };
       },

@@ -27,22 +27,33 @@ import {
   insertMessages,
   loadPreviousMessages,
 } from "../messages/message.service";
+import { findRelevantContent } from "../rags/rag.service";
 
 export const handleSentMessage = async (
   userId: string,
   message: MyUIMessage,
   modelProvider: string,
-  conversationId: string
+  conversationId: string,
+  isRag: boolean
 ) => {
   await validateAccessability(userId, conversationId);
 
-  return generateAIResponse(conversationId, message, modelProvider);
+  let context: string | undefined;
+
+  if (isRag) {
+    const msg = message.parts[0].type === "text" ? message.parts[0].text : "";
+    context = await findRelevantContent(msg);
+    console.log("🚀 ~ handleSentMessage ~ context:", context);
+  }
+
+  return generateAIResponse(conversationId, message, modelProvider, context);
 };
 
 const generateAIResponse = async (
   conversationId: string,
   message: MyUIMessage,
-  modelProvider: string
+  modelProvider: string,
+  context?: string
 ) => {
   try {
     const previousMessages = await loadPreviousMessages(conversationId);
@@ -60,12 +71,9 @@ const generateAIResponse = async (
       messages: validatedMessages,
       modelProvider,
       onFinish: async ({ messages }) => {
-        console.log(
-          "🚀 ~ generateAIResponse ~ messages:",
-          JSON.stringify(messages, null, 2)
-        );
         await insertMessages(conversationId, messages);
       },
+      context,
     });
   } catch (error) {
     if (error instanceof TypeValidationError) {

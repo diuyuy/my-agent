@@ -1,7 +1,6 @@
 import { RESPONSE_STATUS } from "@/constants/response-status";
 import { SuccessReponseSchema } from "@/schemas/common.schemas";
 import { DeleteMessagesSchema } from "@/schemas/message.schema";
-import { sessionMiddleware } from "@/server/common/middlewares/session.middleware";
 import { Env } from "@/server/common/types/types";
 import {
   createErrorResponseSignature,
@@ -11,7 +10,6 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { deleteMessageById } from "./message.service";
 
 const messageRoute = new OpenAPIHono<Env>();
-messageRoute.use(sessionMiddleware);
 
 const deleteMessageRoute = createRoute({
   method: "delete",

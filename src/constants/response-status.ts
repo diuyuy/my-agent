@@ -6,6 +6,13 @@ export const RESPONSE_STATUS = {
     description: "요청 성공",
   },
 
+  EMBEDDING_CREATED: {
+    status: 201,
+    code: "EMBEDDING_CREATED",
+    message: "임베딩이 성공적으로 생성되었습니다.",
+    description: "요청 성공",
+  },
+
   // 400
   INVALID_REQUEST_FORMAT: {
     status: 400,

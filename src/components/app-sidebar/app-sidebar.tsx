@@ -1,6 +1,3 @@
-import { ROUTER_PATH } from "@/constants/router-path";
-import { ComputerIcon, SearchIcon } from "lucide-react";
-import Link from "next/link";
 import { Suspense } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -9,8 +6,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
 } from "../ui/sidebar";
 import { Spinner } from "../ui/spinner";
@@ -23,7 +18,7 @@ export default function AppSidebar() {
     <Sidebar collapsible="icon">
       <AppSidebarHeader />
       <SidebarContent className="whitespace-nowrap">
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
@@ -33,12 +28,14 @@ export default function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
-                <ComputerIcon /> 워크스페이스
+              <SidebarMenuButton asChild>
+                <Link href={ROUTER_PATH.WORKSPACE}>
+                  <ComputerIcon /> 워크스페이스
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-        </SidebarGroup>
+        </SidebarGroup> */}
         <SidebarGroup>
           <SidebarGroupLabel>즐겨찾기</SidebarGroupLabel>
           <Suspense

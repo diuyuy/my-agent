@@ -16,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { QUERY_KEYS } from "@/constants/query-keys";
 import { ROUTER_PATH } from "@/constants/router-path";
-import { QUERY_KEYS } from "@/lib/utils";
 import type { Conversation } from "@/schemas/conversation.schema";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -33,7 +33,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function ConversationItem({ conversation }: { conversation: Conversation }) {
+export function ConversationItem({
+  conversation,
+}: {
+  conversation: Conversation;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -144,10 +148,7 @@ export function ConversationItem({ conversation }: { conversation: Conversation 
             </Button>
 
             <DropdownMenu>
-              <DropdownMenuTrigger
-                asChild
-                onClick={(e) => e.stopPropagation()}
-              >
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <EllipsisIcon className="h-4 w-4" />
                 </Button>
@@ -160,9 +161,7 @@ export function ConversationItem({ conversation }: { conversation: Conversation 
                   }}
                 >
                   <StarIcon className="text-foreground" />
-                  {conversation.isFavorite
-                    ? "즐겨찾기 제거"
-                    : "즐겨찾기 추가"}
+                  {conversation.isFavorite ? "즐겨찾기 제거" : "즐겨찾기 추가"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {

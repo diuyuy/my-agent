@@ -11,7 +11,6 @@ import {
 import { CACHE_TAG } from "@/constants/cache-tag";
 import { SUCCESS_RESPONSE } from "@/constants/success-response";
 import { SendMessageSchema } from "@/schemas/message.schema";
-import { sessionMiddleware } from "@/server/common/middlewares/session.middleware";
 import { Env } from "@/server/common/types/types";
 import {
   createErrorResponseSignature,
@@ -36,9 +35,6 @@ import {
 } from "./conversation.service";
 
 const conversationRoute = new OpenAPIHono<Env>();
-
-// Register session middleware
-conversationRoute.use(sessionMiddleware);
 
 // Get All conversations with pagination
 const findAllRoute = createRoute({
@@ -112,16 +108,16 @@ conversationRoute.post(
   "/",
   zValidator("json", SendMessageSchema, zodValidationHook),
   async (c) => {
-    const { message, modelProvider, conversationId } = c.req.valid("json");
-    console.log("🚀 ~ modelProvider:", modelProvider);
+    const { message, modelProvider, conversationId, isRag } =
+      c.req.valid("json");
     const user = c.get("user");
-    revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
     return handleSentMessage(
       user.id,
       message as MyUIMessage,
       modelProvider,
-      conversationId
+      conversationId,
+      isRag ?? false
     );
   }
 );

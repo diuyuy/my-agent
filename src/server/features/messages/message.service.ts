@@ -31,9 +31,6 @@ export const insertMessages = async (
   const msgs = uiMessages.map((message) => ({ conversationId, ...message }));
 
   await db.insert(messages).values(msgs).onConflictDoNothing();
-  for (const { role, parts, metadata } of uiMessages) {
-    console.log(JSON.stringify({ role, parts, metadata }, null, 2));
-  }
 };
 
 export const findAllMessages = async (

@@ -1,9 +1,9 @@
 "use client";
 
 import { createNewConversation } from "@/client-services/conversation.api";
+import { QUERY_KEYS } from "@/constants/query-keys";
 import { ROUTER_PATH } from "@/constants/router-path";
 import { useIsCreatingNewConversation } from "@/hooks/use-is-creating-new-conversation";
-import { QUERY_KEYS } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -12,6 +12,8 @@ import { PromptInput } from "./components/prompt-input";
 
 export default function NewChatPage() {
   const [input, setInput] = useState("");
+  const { modelProvider, setModelProvider, isRag, setIsRag } =
+    useIsCreatingNewConversation();
   const router = useRouter();
   const { setIsCreating } = useIsCreatingNewConversation();
 
@@ -19,8 +21,9 @@ export default function NewChatPage() {
     mutationKey: QUERY_KEYS.getConversationQueryKeys(),
     mutationFn: createNewConversation,
     onSuccess: (conversationId) => {
-      setIsCreating(input.trim());
+      setIsCreating({ message: input.trim(), modelProvider, isRag });
       setInput("");
+      setIsRag(false);
       router.push(`${ROUTER_PATH.CONVERSATION}/${conversationId}`);
     },
     onError: (error) => {
@@ -44,7 +47,15 @@ export default function NewChatPage() {
           채팅을 입력해보세요!
         </div>
         <form onSubmit={handleSubmit}>
-          <PromptInput value={input} setValue={setInput} />
+          <PromptInput
+            value={input}
+            setValue={setInput}
+            modelProvider={modelProvider}
+            setModelProvider={setModelProvider}
+            isRag={isRag}
+            setIsRag={setIsRag}
+            isSending={false}
+          />
         </form>
       </div>
     </div>

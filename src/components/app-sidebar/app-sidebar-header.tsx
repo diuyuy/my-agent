@@ -2,7 +2,7 @@
 
 import { ROUTER_PATH } from "@/constants/router-path";
 import { cn } from "@/lib/utils";
-import { EditIcon } from "lucide-react";
+import { ComputerIcon, EditIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 import {
   SidebarHeader,
@@ -37,6 +37,22 @@ export default function AppSidebarHeader() {
             <SidebarMenuButton className="whitespace-nowrap" asChild>
               <Link href={ROUTER_PATH.CONVERSATION}>
                 <EditIcon /> 새 채팅
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild className="whitespace-nowrap">
+              <Link href={ROUTER_PATH.SEARCH}>
+                <SearchIcon /> 검색
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild className="whitespace-nowrap">
+              <Link href={ROUTER_PATH.WORKSPACE}>
+                <ComputerIcon /> 워크스페이스
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
