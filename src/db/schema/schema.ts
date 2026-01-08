@@ -116,7 +116,7 @@ export const documentChunks = pgTable(
       .references(() => documentResources.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     tag: text("tag"), // 문서 필터링 용 태그
-    embedding: vector("embedding", { dimensions: 1536 }),
+    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

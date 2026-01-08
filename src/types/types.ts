@@ -1,7 +1,6 @@
 import { ErrorResponse, SuccessResponse } from "@/schemas/common.schemas";
 import { createPaginationSchema } from "@/server/common/utils/schema-utils";
 import { z } from "@hono/zod-openapi";
-import { AssistantModelMessage, ModelMessage, UserModelMessage } from "ai";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DOCS_LANGUAGE } from "../constants/docs-language";
 
@@ -22,11 +21,6 @@ export type ResponseStatus = {
   message: string;
   description: string;
 };
-
-export type ClientMessage = Extract<
-  ModelMessage,
-  UserModelMessage | AssistantModelMessage
->;
 
 export type ApiResponse<T = undefined> = SuccessResponse<T> | ErrorResponse;
 

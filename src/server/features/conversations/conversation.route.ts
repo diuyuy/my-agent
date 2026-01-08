@@ -8,7 +8,6 @@ import {
   UpdateConversationTitleSchema,
 } from "@/schemas/conversation.schema";
 
-import { CACHE_TAG } from "@/constants/cache-tag";
 import { SUCCESS_RESPONSE } from "@/constants/success-response";
 import { SendMessageSchema } from "@/schemas/message.schema";
 import { Env } from "@/server/common/types/types";
@@ -20,7 +19,6 @@ import { createPaginationSchema } from "@/server/common/utils/schema-utils";
 import { zodValidationHook } from "@/server/common/utils/zod-validation-hook";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { zValidator } from "@hono/zod-validator";
-import { revalidateTag } from "next/cache";
 import { MyUIMessage } from "../ai/ai.schemas";
 import {
   addFavoriteConversation,
@@ -110,6 +108,7 @@ conversationRoute.post(
   async (c) => {
     const { message, modelProvider, conversationId, isRag } =
       c.req.valid("json");
+    console.log("🚀 ~ isRag:", isRag);
     const user = c.get("user");
 
     return handleSentMessage(
@@ -196,8 +195,6 @@ conversationRoute.openapi(
     const user = c.get("user");
 
     const result = await removeConversation(user.id, conversationId);
-    revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
-    revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
     return c.json(createSuccessResponse(RESPONSE_STATUS.OK, result), 200);
   },
@@ -239,8 +236,6 @@ conversationRoute.openapi(updateConversationRoute, async (c) => {
   const user = c.get("user");
 
   await updateConversationTitle(conversationId, title, true, user.id);
-  revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
-  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
   return c.json(SUCCESS_RESPONSE, 200);
 });
@@ -302,8 +297,6 @@ conversationRoute.openapi(addFavoriteRoute, async (c) => {
   const user = c.get("user");
 
   await addFavoriteConversation(user.id, conversationId);
-  revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
-  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
   return c.json(SUCCESS_RESPONSE, 200);
 });
@@ -334,8 +327,6 @@ conversationRoute.openapi(deleteFavoriteRoute, async (c) => {
   const user = c.get("user");
 
   await deleteFavoriteConversation(user.id, conversationId);
-  revalidateTag(CACHE_TAG.getFavoriteCacheTag(user.id), { expire: 0 });
-  revalidateTag(CACHE_TAG.getHistoryCacheTag(user.id), { expire: 0 });
 
   return c.json(SUCCESS_RESPONSE, 200);
 });

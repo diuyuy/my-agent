@@ -79,6 +79,8 @@ export default function ChatWindow({ conversationId, initialMessages }: Props) {
   useEffect(() => {
     const msg = consumeMessage();
     if (msg) {
+      const da = getRequestData();
+      console.log("🚀 ~ ChatWindow ~ da:", da);
       sendMessage(
         { text: msg },
         {
