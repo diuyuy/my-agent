@@ -15,27 +15,9 @@ import AppSidebarHistoryMenu from "./app-sidebar-history-menu";
 
 export default function AppSidebar() {
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar variant="sidebar" collapsible="icon">
       <AppSidebarHeader />
       <SidebarContent className="whitespace-nowrap">
-        {/* <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href={ROUTER_PATH.SEARCH}>
-                  <SearchIcon /> 검색
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href={ROUTER_PATH.WORKSPACE}>
-                  <ComputerIcon /> 워크스페이스
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup> */}
         <SidebarGroup>
           <SidebarGroupLabel>즐겨찾기</SidebarGroupLabel>
           <Suspense

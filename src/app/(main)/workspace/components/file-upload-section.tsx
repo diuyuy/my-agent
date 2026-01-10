@@ -1,19 +1,28 @@
-"use client"
+"use client";
 
-import { useCallback, useState } from "react"
-import { useDropzone } from "react-dropzone"
-import { Upload, FileText, X } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { createEmbedding } from "@/client-services/rag.api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  ExtractedTextData,
+  extractTextFromPdf,
+  extractTextFromTxtFile,
+} from "@/lib/text-extraction";
+import { FileText, Upload, X } from "lucide-react";
+import { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
 
 export function FileUploadSection() {
-  const [file, setFile] = useState<File | null>(null)
+  const [file, setFile] = useState<File | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
-      setFile(acceptedFiles[0])
+      setFile(acceptedFiles[0]);
     }
-  }, [])
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -23,18 +32,49 @@ export function FileUploadSection() {
     },
     maxFiles: 1,
     multiple: false,
-  })
+  });
 
   const removeFile = () => {
-    setFile(null)
-  }
+    setFile(null);
+  };
 
-  const handleUpload = () => {
-    if (file) {
-      // TODO: 서버에 파일 업로드 로직
-      console.log("Uploading file:", file.name)
+  const handleUpload = async () => {
+    if (!file) return;
+    setIsExtracting(true);
+
+    try {
+      let extractedData: ExtractedTextData;
+
+      // .txt 파일인 경우 텍스트 추출
+      if (file.type.includes("text/plain") || file.name.endsWith(".txt")) {
+        extractedData = await extractTextFromTxtFile(file);
+      }
+      // .pdf 파일인 경우 텍스트 추출
+      else if (
+        file.type.includes("application/pdf") ||
+        file.name.endsWith(".pdf")
+      ) {
+        extractedData = await extractTextFromPdf(file);
+      } else {
+        throw new Error("지원하지 않는 파일 형식입니다.");
+      }
+
+      console.log("Extracted text data:", extractedData);
+
+      await createEmbedding(extractedData);
+
+      toast.success(`${file.name} 텍스트 추출 완료`);
+    } catch (error) {
+      console.error("File processing error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "파일 처리 중 오류가 발생했습니다."
+      );
+    } finally {
+      setIsExtracting(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -90,10 +130,23 @@ export function FileUploadSection() {
           </div>
         )}
 
-        <Button onClick={handleUpload} disabled={!file} className="w-full">
+        {isExtracting && (
+          <div className="flex items-center justify-center gap-2 p-3 bg-primary/10 rounded-lg">
+            <Spinner className="size-4 text-primary" />
+            <span className="text-sm font-medium text-primary">
+              텍스트 추출 중...
+            </span>
+          </div>
+        )}
+
+        <Button
+          onClick={handleUpload}
+          disabled={!file || isExtracting}
+          className="w-full"
+        >
           업로드
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }

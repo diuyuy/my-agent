@@ -8,6 +8,7 @@ import messageRoute from "@/server/features/messages/message.route";
 import ragRoute from "@/server/features/rags/rag.route";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
+import { logger } from "hono/logger";
 import { handle } from "hono/vercel";
 
 const app = new OpenAPIHono<Env>({
@@ -20,6 +21,7 @@ app.on(["POST", "GET"], "/auth/*", (c) => {
   return auth.handler(c.req.raw);
 });
 
+app.use(logger());
 app.use(sessionMiddleware);
 app.route("/conversations", conversationRoute);
 app.route("/messages", messageRoute);

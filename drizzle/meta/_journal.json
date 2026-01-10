@@ -64,6 +64,13 @@
       "when": 1767688133872,
       "tag": "0008_quiet_morph",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767868801369,
+      "tag": "0009_curvy_scarecrow",
+      "breakpoints": true
     }
   ]
 }

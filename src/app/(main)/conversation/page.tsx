@@ -23,7 +23,6 @@ export default function NewChatPage() {
     onSuccess: (conversationId) => {
       setIsCreating({ message: input.trim(), modelProvider, isRag });
       setInput("");
-      setIsRag(false);
       router.push(`${ROUTER_PATH.CONVERSATION}/${conversationId}`);
     },
     onError: (error) => {

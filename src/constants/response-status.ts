@@ -44,6 +44,20 @@ export const RESPONSE_STATUS = {
     description: "권한 오류",
   },
 
+  ACCESS_RESOURCE_DENIED: {
+    status: 403,
+    code: "ACCESS_RESOURCE_DENIED",
+    message: "해당 리소스에 접근할 권한이 없습니다.",
+    description: "권한 오류",
+  },
+
+  ACCESS_CHUNK_DENIED: {
+    status: 403,
+    code: "ACCESS_CHUNK_DENIED",
+    message: "해당 Chunk에 접근할 권한이 없습니다.",
+    description: "권한 오류",
+  },
+
   // 404
   NOT_FOUND: {
     status: 404,
@@ -63,6 +77,20 @@ export const RESPONSE_STATUS = {
     status: 404,
     code: "MESSAGE_NOT_FOUND",
     message: "해당 메시지가 존재하지 않습니다.",
+    description: "Not Found Conversation",
+  },
+
+  RESOURCE_NOT_FOUND: {
+    status: 404,
+    code: "RESOURCE_NOT_FOUND",
+    message: "해당 리소스가 존재하지 않습니다.",
+    description: "Not Found Conversation",
+  },
+
+  CHUNK_NOT_FOUND: {
+    status: 404,
+    code: "CHUNCK_NOT_FOUND",
+    message: "해당 Chunk가 존재하지 않습니다.",
     description: "Not Found Conversation",
   },
 
